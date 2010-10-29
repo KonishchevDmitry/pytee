@@ -1,0 +1,4 @@
+/.vim
+/cscope.files
+/tags
+*.pyc
