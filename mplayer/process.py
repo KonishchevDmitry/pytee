@@ -87,6 +87,12 @@ class MPlayer(QtCore.QObject):
         self.__command("seek {0} 0".format(seconds))
 
 
+    def volume(self, value):
+        """Increase/decrease volume."""
+
+        self.__command("volume {0} 0".format(value))
+
+
     def __command(self, command):
         """Sends a command to the MPlayer."""
 

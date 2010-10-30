@@ -55,6 +55,8 @@ class MainWindow(QtGui.QWidget):
             "Space":                 "pause",
             "Left":                  "seek-3",
             "Right":                 "seek+3",
+            "Up":                    "volume+10",
+            "Down":                  "volume-10",
 
             "Q":                     "quit",
             "Escape":                "quit",
@@ -68,13 +70,16 @@ class MainWindow(QtGui.QWidget):
         for key_name, action_name in hotkeys.iteritems():
             args = ()
 
-            if action_name.startswith("seek"):
-                try:
-                    args = ( int(action_name[len("seek"):]), )
-                except ValueError:
-                    raise Error(self.tr("Invalid action '{0}' for hotkey '{1}'."), action_name, key_name)
+            for exception_name in ("seek", "volume"):
+                if action_name.startswith(exception_name):
+                    try:
+                        args = ( int(action_name[len(exception_name):]), )
+                    except ValueError:
+                        raise Error(self.tr("Invalid action '{0}' for hotkey '{1}'."), action_name, key_name)
 
-                action_name = "seek"
+                    action_name = exception_name
+
+                    break
 
             if isinstance(key_name, str):
                 try:

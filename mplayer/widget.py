@@ -49,7 +49,8 @@ class MPlayerWidget(QtGui.QWidget):
         return {
             "osd_toggle": lambda: self.osd_toggle(),
             "pause":      lambda: self.pause(),
-            "seek":       lambda seconds: self.seek(seconds)
+            "seek":       lambda seconds: self.seek(seconds),
+            "volume":     lambda value: self.volume(value)
         }
 
 
@@ -97,6 +98,13 @@ class MPlayerWidget(QtGui.QWidget):
         """Seeks for specified number of seconds."""
 
         self.__mplayer.seek(seconds)
+
+
+    @Control
+    def volume(self, value):
+        """Increase/decrease volume."""
+
+        self.__mplayer.volume(value)
 
 
     def _mplayer_failed(self, error):
