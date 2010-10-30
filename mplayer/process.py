@@ -9,6 +9,8 @@ import threading
 
 from PySide import QtCore, QtGui
 
+from cl.core import *
+
 __ALL__ = [ "MPlayer" ]
 LOG = logging.getLogger("mplayer.mplayer")
 
@@ -16,25 +18,28 @@ LOG = logging.getLogger("mplayer.mplayer")
 class MPlayer(QtCore.QObject):
     """Represents a running MPlayer process."""
 
-    # Emitted on MPlayer start.
     started = QtCore.Signal()
+    """Emitted on MPlayer start."""
 
-    # Emitted with error string when MPlayer failed to start.
     failed = QtCore.Signal(str)
+    """Emitted with error string when MPlayer failed to start."""
 
 
-    # The MPlayer process.
     __process = None
+    """The MPlayer process."""
 
-    # The process' stdin.
     __stdin = None
+    """The process' stdin."""
 
-    # The process' stdout.
     __stdout = None
+    """The process' stdout."""
 
 
-    # A movie that is playing at this moment.
     __movie = None
+    """A movie that is playing at this moment."""
+
+    __osd_displaying = False
+    """Is OSD displaying now?"""
 
 
     def __init__(self, parent = None):
@@ -51,7 +56,7 @@ class MPlayer(QtCore.QObject):
     def run(self, *args):
         """Runs MPlayer."""
 
-        thread = threading.Thread(name = "MPlayer starting thread",
+        thread = threading.Thread(name = "MPlayer thread",
             target = self.__run, args = args)
         thread.setDaemon(True)
         thread.start()
@@ -63,9 +68,29 @@ class MPlayer(QtCore.QObject):
         return self.__movie
 
 
+    def osd_toggle(self):
+        """Toggles the OSD displaying."""
+
+        self.__command("osd 1" if self.__osd_displaying else "osd 3")
+        self.__osd_displaying = not self.__osd_displaying
+
+
+    def pause(self):
+        """Pauses the movie playing."""
+
+        self.__command("pause")
+
+
+    def seek(self, seconds):
+        """Seeks for specified number of seconds."""
+
+        self.__command("seek {0} 0".format(seconds))
+
+
     def __command(self, command):
         """Sends a command to the MPlayer."""
 
+        LOG.debug("Sending command '%s' to the MPlayer...", command)
         self.__stdin.write(command + "\n")
 
 
@@ -103,7 +128,7 @@ class MPlayer(QtCore.QObject):
 
             LOG.debug("Running MPlayer: %s", args)
 
-            self.__process = subprocess.Popen(args, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+            self.__process = subprocess.Popen(args, stdin = subprocess.PIPE, stdout = subprocess.PIPE, close_fds = True)
             self.__stdin = self.__process.stdin
             self.__stdout = self.__process.stdout
 

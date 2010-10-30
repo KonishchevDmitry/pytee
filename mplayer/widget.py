@@ -12,6 +12,17 @@ __ALL__ = [ "MPlayerWidget" ]
 LOG = logging.getLogger("mplayer.widget")
 
 
+def Control(func):
+    """Logs all control method calls."""
+
+    def decorator(self, *args):
+        LOG.info("Player control: %s%s.", func.func_name,
+            "({0})".format(args[0]) if len(args) == 1 else args)
+        return func(self, *args)
+
+    return decorator
+
+
 class MPlayerWidget(QtGui.QWidget):
     """MPlayer Qt widget."""
 
@@ -29,6 +40,19 @@ class MPlayerWidget(QtGui.QWidget):
         self.__display_widget.setHidden(True)
 
 
+    def get_control_actions(self):
+        """Returns a dictionary of all control handlers.
+
+        It may be useful for setting up hotkeys.
+        """
+
+        return {
+            "osd_toggle": lambda: self.osd_toggle(),
+            "pause":      lambda: self.pause(),
+            "seek":       lambda seconds: self.seek(seconds)
+        }
+
+
     # TODO
     def open(self):
         movie_path = "/my_files/video/pub/Prison Break/prison.break.s02.rus.hdtvrip.novafilm.tv/prison.break.s02e03.rus.hdtvrip.novafilm.tv.avi"
@@ -39,21 +63,40 @@ class MPlayerWidget(QtGui.QWidget):
         self.__mplayer.run(movie_path, self.__display_widget.winId())
 
 
-    # TODO
     def paintEvent(self, event):
-        print "paintEvent"
-        hourColor = QtGui.QColor(127, 0, 127)
+        """QWidget paint event handler"""
+
         painter = QtGui.QPainter(self)
-        painter.setPen(QtCore.Qt.NoPen)
-        painter.setBrush(hourColor)
+        painter.setBrush(QtGui.QColor(0, 0, 0))
         painter.drawRect(0, 0, self.width(), self.height())
 
 
-    def resizeEvent(self, event):
-        """The QWidget resize event handler"""
+    @Control
+    def osd_toggle(self):
+        """Toggles the OSD displaying."""
 
-        if self.__mplayer and self.__mplayer.get_movie():
+        self.__mplayer.osd_toggle()
+
+
+    @Control
+    def pause(self):
+        """Pauses the movie playing."""
+
+        self.__mplayer.pause()
+
+
+    def resizeEvent(self, event):
+        """QWidget resize event handler"""
+
+        if self.__opened():
             self.__scale_display_widget()
+
+
+    @Control
+    def seek(self, seconds):
+        """Seeks for specified number of seconds."""
+
+        self.__mplayer.seek(seconds)
 
 
     def _mplayer_failed(self, error):
@@ -68,6 +111,12 @@ class MPlayerWidget(QtGui.QWidget):
 
         self.__scale_display_widget()
         self.__display_widget.setHidden(False)
+
+
+    def __opened(self):
+        """Returns True if any movie is opened at this moment."""
+
+        return self.__mplayer and self.__mplayer.get_movie()
 
 
     def __scale_display_widget(self):
