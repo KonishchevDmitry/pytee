@@ -11,7 +11,7 @@ from PySide import QtCore, QtGui
 
 from cl.core import *
 
-__ALL__ = [ "MPlayer" ]
+__all__ = [ "MPlayer" ]
 LOG = logging.getLogger("mplayer.mplayer")
 
 
@@ -41,9 +41,16 @@ class MPlayer(QtCore.QObject):
     __osd_displaying = False
     """Is OSD displaying now?"""
 
+    __update_timer = None
+    """Timer for updating current MPlayer status."""
+
 
     def __init__(self, parent = None):
         super(MPlayer, self).__init__(parent)
+
+        self.__update_timer = QtCore.QTimer(self)
+        self.__update_timer.timeout.connect(self._update)
+        self.__update_timer.start(100)
 
 
     def __del__(self):
@@ -93,6 +100,16 @@ class MPlayer(QtCore.QObject):
         self.__command("volume {0} 0".format(value))
 
 
+    def _update(self):
+        """Called by timer to update current MPlayer status."""
+
+#        pass
+#        if self.__movie:
+#            print self.__get_property("pause", True)
+#            if self.__get_property("pause", True) == "no":
+        print self.__get_property("time_pos", True)
+
+
     def __command(self, command):
         """Sends a command to the MPlayer."""
 
@@ -100,10 +117,11 @@ class MPlayer(QtCore.QObject):
         self.__stdin.write(command + "\n")
 
 
-    def __get_property(self, property_name):
+    def __get_property(self, property_name, force_pausing = False):
         """Requests a MPlayer property value."""
 
-        self.__command("get_property " + property_name)
+        self.__command("{0}get_property {1}".format(
+            "pausing_keep_force " if force_pausing else "", property_name))
 
         response_template = "ANS_{0}=".format(property_name)
 
@@ -114,7 +132,7 @@ class MPlayer(QtCore.QObject):
                 raise Exception("EOF")
 
             if line.startswith(response_template):
-                return line[len(response_template):]
+                return line[len(response_template):].rstrip()
             else:
                 sys.stdout.write(line)
 
@@ -127,7 +145,11 @@ class MPlayer(QtCore.QObject):
                 "/usr/bin/mplayer",
                 "-slave", "-quiet",
                 "-input", "nodefault-bindings", "-noconfig", "all",
-                "-vo", "xv",
+                "-vo", "xv,sdl,x11",
+                "-ao", "alsa,oss,sdl,arts", "-framedrop", "-contrast", "0", "-brightness", "0", "-hue", "0", "-saturation", "0", "-identify",
+                #"-vo", "gl2",
+                #"-vo", "xv",
+#                "-zoom",
                 "-wid", str(window_id),
                 movie_path
             ]
@@ -151,6 +173,7 @@ class MPlayer(QtCore.QObject):
             self.failed.emit(str(e))
         else:
             self.started.emit()
+
 
 
 class Movie:

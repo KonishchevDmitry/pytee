@@ -2,14 +2,16 @@
 
 """Provides the application's main window."""
 
+import os
 import logging
 
+import pysd
 from PySide import QtCore, QtGui
 
 from cl.core import *
 from mplayer.widget import MPlayerWidget
 
-__ALL__ = [ "MainWindow" ]
+__all__ = [ "MainWindow" ]
 LOG = logging.getLogger("pytee.main_window")
 
 
@@ -36,7 +38,20 @@ class MainWindow(QtGui.QWidget):
         self.setup_hotkeys()
         self.resize(640, 480)
 
-        self.__player.open()
+        self.open()
+
+
+    def open(self):
+
+        movie_path = "/my_files/temp/prison.break.s02e03.rus.hdtvrip.novafilm.tv.avi"
+
+        alternatives, subtitles = self.__find_related_media_files(movie_path)
+        LOG.debug("Found alternative movies: %s.", alternatives)
+        LOG.debug("Found subtitles: %s.", subtitles)
+
+#        movie_path = "/my_files/english/Lie To Me/Lie.To.Me.s03e03.rus.LostFilm.TV.avi"
+
+#        self.__player.open(movie_path)
 
 
     def setup_hotkeys(self):
@@ -97,4 +112,45 @@ class MainWindow(QtGui.QWidget):
             action.setShortcut(key)
             action.triggered.connect(Handler_proxy(handler, args))
             self.addAction(action)
+
+
+    def __find_related_media_files(self, movie_path):
+        """
+        Finds files related to the movie: the same episode with another
+        translation and subtitle files.
+        """
+
+        tools = pysd.Tv_show_tools()
+        movie_path = os.path.abspath(movie_path)
+        movie_file_name = os.path.basename(movie_path)
+        movie_dir_path = os.path.dirname(movie_path)
+        movie_names, movie_season, movie_episode, movie_delimiter, movie_extra_info = \
+            tools.get_info_from_filename(movie_file_name)
+        movie_names = set(movie_names)
+
+        media_extensions = set(( ext[1:] for ext in pysd.MEDIA_EXTENSIONS ))
+        subtitle_extensions = set(( ext[1:] for ext in pysd.SUBTITLE_EXTENSIONS ))
+        extensions = media_extensions | subtitle_extensions
+
+        alternatives = []
+        subtitles = []
+
+        for file_name in os.listdir(movie_dir_path):
+            path = os.path.join(movie_dir_path, file_name)
+            extension = os.path.splitext(file_name)[1].lower()
+
+            if file_name != movie_file_name and extension in extensions and os.path.isfile(path):
+                try:
+                    names, season, episode, delimiter, extra_info = tools.get_info_from_filename(file_name)
+                    names = set(names)
+                except pysd.Not_found:
+                    continue
+
+                if movie_names.intersection(names) and movie_season == season and movie_episode == episode:
+                    if extension in subtitle_extensions:
+                        subtitles.append(path)
+                    else:
+                        alternatives.append(path)
+
+        return alternatives, subtitles
 

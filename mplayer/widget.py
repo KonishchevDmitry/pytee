@@ -8,7 +8,7 @@ from PySide import QtCore, QtGui
 
 from mplayer.process import MPlayer
 
-__ALL__ = [ "MPlayerWidget" ]
+__all__ = [ "MPlayerWidget" ]
 LOG = logging.getLogger("mplayer.widget")
 
 
@@ -55,9 +55,7 @@ class MPlayerWidget(QtGui.QWidget):
 
 
     # TODO
-    def open(self):
-        movie_path = "/my_files/video/pub/Prison Break/prison.break.s02.rus.hdtvrip.novafilm.tv/prison.break.s02e03.rus.hdtvrip.novafilm.tv.avi"
-
+    def open(self, move_path):
         self.__mplayer = MPlayer()
         self.__mplayer.started.connect(self._mplayer_started)
         self.__mplayer.failed.connect(self._mplayer_failed)

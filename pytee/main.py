@@ -9,10 +9,11 @@ import os
 from PySide import QtCore, QtGui
 
 sys.path.append(os.path.dirname(__file__))
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "pysd"))
 from pytee.main_window import MainWindow
 from cl.core import *
 
-for log in ("player", "cl", "mplayer"):
+for log in ("player", "cl", "mplayer", "pytee", "subtitles"):
     LOG = logging.getLogger(log)
     handler = logging.StreamHandler(sys.stderr)
     LOG.addHandler(handler)
