@@ -12,7 +12,7 @@ class Error(Exception):
         Exception.__init__(self, error.format(*args) if len(args) else str(error))
 
 
-class Logical_error(Error):
+class LogicalError(Error):
     """Any logical error."""
 
     def __init__(self):

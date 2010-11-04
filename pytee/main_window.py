@@ -10,6 +10,7 @@ from PySide import QtCore, QtGui
 
 from cl.core import *
 from mplayer.widget import MPlayerWidget
+from subtitles.widget import SubtitlesWidget
 
 __all__ = [ "MainWindow" ]
 LOG = logging.getLogger("pytee.main_window")
@@ -21,6 +22,9 @@ class MainWindow(QtGui.QWidget):
     __player = None
     """The player widget."""
 
+    __subtitles = None
+    """The subtitles displaying widget."""
+
 
     def __init__(self, parent = None):
         super(MainWindow, self).__init__(parent)
@@ -30,6 +34,9 @@ class MainWindow(QtGui.QWidget):
 
         self.__player = MPlayerWidget()
         main_layout.addWidget(self.__player)
+
+        self.__subtitles = SubtitlesWidget()
+        main_layout.addWidget(self.__subtitles)
 
         button = QtGui.QToolButton()
         button.clicked.connect(self.__player.open)
@@ -48,6 +55,7 @@ class MainWindow(QtGui.QWidget):
         alternatives, subtitles = self.__find_related_media_files(movie_path)
         LOG.debug("Found alternative movies: %s.", alternatives)
         LOG.debug("Found subtitles: %s.", subtitles)
+        self.__subtitles.load(subtitles)
 
 #        movie_path = "/my_files/english/Lie To Me/Lie.To.Me.s03e03.rus.LostFilm.TV.avi"
 
@@ -148,7 +156,7 @@ class MainWindow(QtGui.QWidget):
 
                 if movie_names.intersection(names) and movie_season == season and movie_episode == episode:
                     if extension in subtitle_extensions:
-                        subtitles.append(path)
+                        subtitles.append((path, extra_info))
                     else:
                         alternatives.append(path)
 
