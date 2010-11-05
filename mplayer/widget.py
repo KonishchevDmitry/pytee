@@ -26,6 +26,12 @@ def Control(func):
 class MPlayerWidget(QtGui.QWidget):
     """MPlayer Qt widget."""
 
+    pos_changed = QtCore.Signal(int)
+    """
+    Emitted with time in milliseconds when current time position in playing
+    movie changes.
+    """
+
     __mplayer = None
     """Running MPlayer instance."""
 
@@ -55,10 +61,12 @@ class MPlayerWidget(QtGui.QWidget):
 
 
     # TODO
-    def open(self, move_path):
+    def open(self, movie_path):
         self.__mplayer = MPlayer()
         self.__mplayer.started.connect(self._mplayer_started)
         self.__mplayer.failed.connect(self._mplayer_failed)
+        # TODO
+        self.__mplayer.pos_changed.connect(self.pos_changed)
         self.__mplayer.run(movie_path, self.__display_widget.winId())
 
 

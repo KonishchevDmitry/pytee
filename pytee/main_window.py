@@ -30,17 +30,21 @@ class MainWindow(QtGui.QWidget):
         super(MainWindow, self).__init__(parent)
 
         main_layout = QtGui.QBoxLayout(QtGui.QBoxLayout.TopToBottom)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(main_layout)
 
         self.__player = MPlayerWidget()
-        main_layout.addWidget(self.__player)
+        main_layout.addWidget(self.__player, 1)
 
         self.__subtitles = SubtitlesWidget()
         main_layout.addWidget(self.__subtitles)
 
-        button = QtGui.QToolButton()
-        button.clicked.connect(self.__player.open)
-        main_layout.addWidget(button)
+        self.__player.pos_changed.connect(self.__subtitles.set_pos)
+
+        # TODO
+#        button = QtGui.QToolButton()
+#        button.clicked.connect(self.__player.open)
+#        main_layout.addWidget(button)
 
         self.setup_hotkeys()
         self.resize(640, 480)
@@ -50,7 +54,7 @@ class MainWindow(QtGui.QWidget):
 
     def open(self):
 
-        movie_path = "/my_files/temp/prison.break.s02e03.rus.hdtvrip.novafilm.tv.avi"
+        movie_path = "/my_files/temp/Scrubs - 2x20.avi"
 
         alternatives, subtitles = self.__find_related_media_files(movie_path)
         LOG.debug("Found alternative movies: %s.", alternatives)
@@ -59,7 +63,7 @@ class MainWindow(QtGui.QWidget):
 
 #        movie_path = "/my_files/english/Lie To Me/Lie.To.Me.s03e03.rus.LostFilm.TV.avi"
 
-#        self.__player.open(movie_path)
+        self.__player.open(movie_path)
 
 
     def setup_hotkeys(self):

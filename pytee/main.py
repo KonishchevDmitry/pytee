@@ -13,7 +13,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__f
 from pytee.main_window import MainWindow
 from cl.core import *
 
-for log in ("player", "cl", "mplayer", "pytee", "subtitles"):
+for log in ("player", "cl", "mplayer", "pytee", "subtitles.widget"):
     LOG = logging.getLogger(log)
     handler = logging.StreamHandler(sys.stderr)
     LOG.addHandler(handler)

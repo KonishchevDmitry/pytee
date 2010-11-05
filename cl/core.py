@@ -4,12 +4,20 @@
 
 from PySide import QtCore
 
+__all__ = [ "Error", "LogicalError" ]
+
 
 class Error(Exception):
     """The base class for all exceptions that our code throws."""
 
     def __init__(self, error, *args):
         Exception.__init__(self, error.format(*args) if len(args) else str(error))
+
+
+    # TODO FIXME
+    def append(self, error, *args):
+        Exception.__init__(self, str(self) + " " + (error.format(*args) if len(args) else str(error)))
+        return self
 
 
 class LogicalError(Error):

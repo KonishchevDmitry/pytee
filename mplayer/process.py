@@ -15,6 +15,7 @@ __all__ = [ "MPlayer" ]
 LOG = logging.getLogger("mplayer.mplayer")
 
 
+# TODO
 class MPlayer(QtCore.QObject):
     """Represents a running MPlayer process."""
 
@@ -23,6 +24,12 @@ class MPlayer(QtCore.QObject):
 
     failed = QtCore.Signal(str)
     """Emitted with error string when MPlayer failed to start."""
+
+    pos_changed = QtCore.Signal(int)
+    """
+    Emitted with time in milliseconds when current time position in playing
+    movie changes.
+    """
 
 
     __process = None
@@ -103,25 +110,29 @@ class MPlayer(QtCore.QObject):
     def _update(self):
         """Called by timer to update current MPlayer status."""
 
-#        pass
-#        if self.__movie:
-#            print self.__get_property("pause", True)
-#            if self.__get_property("pause", True) == "no":
-        print self.__get_property("time_pos", True)
+        try:
+            if self.__movie:
+                if self.__get_property("pause", force_pausing = True, suppress_debug = True) == "no":
+                    cur_pos = self.__get_property("time_pos", float, force_pausing = True, suppress_debug = True)
+                    self.pos_changed.emit(int(cur_pos * 1000))
+        except Exception, e:
+            LOG.error("MPlayer current status update failed. %s", e)
 
 
-    def __command(self, command):
+    def __command(self, command, suppress_debug = False):
         """Sends a command to the MPlayer."""
 
-        LOG.debug("Sending command '%s' to the MPlayer...", command)
+        if not suppress_debug:
+            LOG.debug("Sending command '%s' to the MPlayer...", command)
+
         self.__stdin.write(command + "\n")
 
 
-    def __get_property(self, property_name, force_pausing = False):
+    def __get_property(self, property_name, result_type = str, force_pausing = False, suppress_debug = False):
         """Requests a MPlayer property value."""
 
         self.__command("{0}get_property {1}".format(
-            "pausing_keep_force " if force_pausing else "", property_name))
+            "pausing_keep_force " if force_pausing else "", property_name), suppress_debug)
 
         response_template = "ANS_{0}=".format(property_name)
 
@@ -132,7 +143,11 @@ class MPlayer(QtCore.QObject):
                 raise Exception("EOF")
 
             if line.startswith(response_template):
-                return line[len(response_template):].rstrip()
+                try:
+                    return result_type(line[len(response_template):].rstrip())
+                except ValueError:
+                    # TODO
+                    raise Error("Invalid return value type for property '{0}'.", property_name)
             else:
                 sys.stdout.write(line)
 
@@ -160,11 +175,7 @@ class MPlayer(QtCore.QObject):
             self.__stdin = self.__process.stdin
             self.__stdout = self.__process.stdout
 
-            try:
-                aspect_ratio = float(self.__get_property("aspect"))
-            except ValueError, e:
-                raise Error("Unable to determine the movie's aspect ratio.")
-
+            aspect_ratio = self.__get_property("aspect", float)
             self.__movie = Movie(movie_path, aspect_ratio)
 
             LOG.debug("We successfully started MPlayer for movie %s.", self.__movie)
