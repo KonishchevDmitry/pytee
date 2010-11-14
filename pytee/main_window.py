@@ -56,18 +56,22 @@ class MainWindow(QtGui.QWidget):
     def open(self):
 
         # TODO FIXME
-        movie_path = "/my_files/temp/Scrubs - 2x20.avi"
-        import sys
-        movie_path = sys.argv[1]
+        try:
+            movie_path = "/my_files/temp/Scrubs - 2x20.avi"
+            import sys
+            movie_path = sys.argv[1]
 
-        alternatives, subtitles = self.__find_related_media_files(movie_path)
-        LOG.debug("Found alternative movies: %s.", alternatives)
-        LOG.debug("Found subtitles: %s.", subtitles)
-        self.__subtitles.load(subtitles)
+            alternatives, subtitles = self.__find_related_media_files(movie_path)
+            LOG.debug("Found alternative movies: %s.", alternatives)
+            LOG.debug("Found subtitles: %s.", subtitles)
+            self.__subtitles.load(subtitles)
 
-#        movie_path = "/my_files/english/Lie To Me/Lie.To.Me.s03e03.rus.LostFilm.TV.avi"
+    #        movie_path = "/my_files/english/Lie To Me/Lie.To.Me.s03e03.rus.LostFilm.TV.avi"
 
-        self.__player.open(movie_path)
+            self.__player.open(movie_path)
+        except Exception, e:
+            print "ZZZZZZZZZZZZZZZZZZZZZ", e
+            LOG.exception(">>>>>>>>>>>>>>>>>> %s", e)
 
 
     def setup_hotkeys(self):

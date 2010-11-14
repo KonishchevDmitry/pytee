@@ -22,7 +22,7 @@ class SubtitlesWidget(QtGui.QWidget):
     """Subtitles to display."""
 
     __cur_text = None
-    """QLabel with current subtitle text."""
+    """QLabel with text of a current subtitle."""
 
     __subtitle_layout = None
     """QLayout with subtitles."""
@@ -39,17 +39,19 @@ class SubtitlesWidget(QtGui.QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(main_layout)
 
+        # Text of a current subtitle -->
         self.__cur_text = QtGui.QLabel()
         self.__cur_text.setAlignment(QtCore.Qt.AlignCenter)
         self.__cur_text.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
-        # TODO
+
         font = self.__cur_text.font()
         font.setPointSize(11)
         self.__cur_text.setFont(font)
+
         main_layout.addWidget(self.__cur_text)
+        # Text of a current subtitle <--
 
         self.__subtitle_layout = QtGui.QBoxLayout(QtGui.QBoxLayout.LeftToRight)
-#        self.__subtitle_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addLayout(self.__subtitle_layout)
 
         self.__subtitle_widgets = []
@@ -67,24 +69,48 @@ class SubtitlesWidget(QtGui.QWidget):
             self.__subtitle_layout.removeWidget(widget)
         self.__subtitle_widgets = []
 
-        subtitles = subtitles[:]
-        subtitles.sort(cmp = self.__subtitle_cmp)
+        try:
+            # Reading the subtitle files -->
+            for subtitle in sorted(subtitles, cmp = self.__subtitle_cmp):
+                subtitle_data = subtitle_reader.read(*subtitle)
 
-        for subtitle in subtitles:
-            subtitle_data = subtitle_reader.read(*subtitle)
+                self.__subtitles.append({
+                    "cur_id":    -1,
+                    "find_from": -1,
+                    "data":      subtitle_data
+                })
+            # Reading the subtitle files <--
 
-            self.__subtitles.append({
-                "cur_id":    -1,
-                "find_from": -1,
-                "data":      subtitle_data
-            })
-            # TODO
-            widget = SubtitleWidget(subtitle_data, self)
-            self.__subtitle_widgets.append(widget)
-            self.__subtitle_layout.addWidget(widget)
+            # Choosing the proper alignment -->
+            if len(self.__subtitles) == 3:
+                alignment = (
+                    QtCore.Qt.AlignRight,
+                    QtCore.Qt.AlignCenter,
+                    QtCore.Qt.AlignLeft
+                )
+            elif len(self.__subtitles) == 2:
+                alignment = (
+                    QtCore.Qt.AlignRight,
+                    QtCore.Qt.AlignLeft
+                )
+            else:
+                alignment = ( QtCore.Qt.AlignCenter for i in xrange(0, len(self.__subtitles)) )
+            # Choosing the proper alignment <--
 
-        self.__update(self.__cur_pos)
-        self.setVisible(bool(self.__subtitle_widgets))
+            # Creating the widgets -->
+            for subtitle, text_alignment in zip(self.__subtitles, alignment):
+                widget = SubtitleWidget(subtitle_data, text_alignment)
+                self.__subtitle_widgets.append(widget)
+                self.__subtitle_layout.addWidget(widget)
+            # Creating the widgets <--
+
+            self.__cur_text.setText("")
+            self.__update(self.__cur_pos)
+        except:
+            self.__subtitles = []
+            raise
+        finally:
+            self.setVisible(bool(self.__subtitles))
 
 
     def set_pos(self, cur_pos):
@@ -92,7 +118,7 @@ class SubtitlesWidget(QtGui.QWidget):
 
         if self.__cur_pos != cur_pos:
             self.__update(cur_pos)
-        self.__cur_pos = cur_pos
+            self.__cur_pos = cur_pos
 
 
     def __lookup(self, subtitles, pos, find_from = -1):
@@ -135,30 +161,20 @@ class SubtitlesWidget(QtGui.QWidget):
     def __update(self, pos):
         """Updates the GUI."""
 
-        if self.__subtitles:
-            for subtitle_id, subtitles in enumerate(self.__subtitles):
-                cur_id, subtitles["find_from"] = \
-                    self.__lookup(subtitles["data"], pos, subtitles["find_from"])
-                subtitles["cur_id"] = cur_id
+        for subtitle_id, subtitles in enumerate(self.__subtitles):
+            cur_id, subtitles["find_from"] = \
+                self.__lookup(subtitles["data"], pos, subtitles["find_from"])
+            subtitles["cur_id"] = cur_id
 
-                if cur_id < 0:
-                    # TODO
-                    pass
-#                    if not subtitle_id:
-#                        self.__cur_text.setText("")
-                else:
-                    subtitles = subtitles["data"][cur_id]
+            if cur_id >= 0:
+                subtitles = subtitles["data"][cur_id]
 
-                    if not subtitle_id:
-                        self.__cur_text.setText(subtitles["text"].replace("\n", " "))
+                if not subtitle_id:
+                    self.__cur_text.setText(subtitles["text"].replace("\n", " "))
 
-                self.__subtitle_widgets[subtitle_id].set_active_subtitle(cur_id)
-        else:
-            self.__cur_text.setText("")
+            self.__subtitle_widgets[subtitle_id].set_active_subtitle(cur_id)
 
 
-# TODO
-ggg = 0
 class SubtitleWidget(QtGui.QTextEdit):
     """Displays a subtitle file."""
 
@@ -168,9 +184,6 @@ class SubtitleWidget(QtGui.QTextEdit):
 
     __cur_subtitle = None
     """ID of the current subtitle."""
-
-    __subtitles = None
-    """Subtitles that we display."""
 
     __text_mappings = None
     """Maps subtitle id to its position in the QTextEdit."""
@@ -182,50 +195,45 @@ class SubtitleWidget(QtGui.QTextEdit):
     """Character format for currently active subtitle."""
 
 
-    def __init__(self, subtitles, parent = None):
+    def __init__(self, subtitles, text_alignment, parent = None):
         QtGui.QTextEdit.__init__(self, parent)
 
-        # TODO: the same with horiz + wrapping
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-
-        self.__char_format_default = QtGui.QTextCharFormat()
-        self.__char_format_active = QtGui.QTextCharFormat()
-        # TODO
-        self.__subtitles = subtitles
         self.__cur_subtitle = -1
         self.__text_mappings = []
 
+        self.__char_format_default = QtGui.QTextCharFormat()
+        self.__char_format_active = QtGui.QTextCharFormat()
+        self.__char_format_active.setFontWeight(QtGui.QFont.Bold)
+
         self.setReadOnly(True)
         self.document().setUndoRedoEnabled(False)
-        self.__char_format_active.setFontWeight(QtGui.QFont.Bold)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
         # Filling up the widget -->
         cursor = self.textCursor()
 
+        block_format = cursor.blockFormat()
+        block_format.setAlignment(text_alignment)
+
         for subtitle in subtitles:
             if self.__text_mappings:
-                global ggg
-                if not ggg:
-                    ggg = 1
-                    format = cursor.blockFormat()
-                    format.setAlignment(QtCore.Qt.AlignRight)
-                    cursor.setBlockFormat(format)
                 cursor.insertBlock()
-
             self.__text_mappings.append(cursor.position())
             cursor.insertHtml(subtitle["text"].replace("\n", "<br>"))
 
         cursor.movePosition(QtGui.QTextCursor.Start)
         cursor.movePosition(QtGui.QTextCursor.End, QtGui.QTextCursor.KeepAnchor)
+
+        cursor.setBlockFormat(block_format)
         cursor.setCharFormat(self.__char_format_default)
         # Filling up the widget <--
 
-        # TODO
         self.setMaximumHeight(150)
-#        self.setMaximumWidth(300)
 
 
     def showEvent(self, event):
+        "QWidget's showEvent."""
+
         QtGui.QTextEdit.showEvent(self, event)
 
         # We must scroll widget at first time it has been showed - it does
@@ -237,31 +245,32 @@ class SubtitleWidget(QtGui.QTextEdit):
 
 
     def __scroll_to_active(self):
-    # TODO scroll to nearest
+        """Scrolls to the current subtitle."""
+
         if self.__cur_subtitle < 0:
-            pass
-            #self.verticalScrollBar().setValue(self.verticalScrollBar().minimum())
+            # TODO scroll to nearest
+            return
+
+        cursor = self.textCursor()
+        cursor.setPosition(self.__text_mappings[self.__cur_subtitle])
+
+        if self.__cur_subtitle < len(self.__text_mappings) - 1:
+            cursor.setPosition(self.__text_mappings[self.__cur_subtitle + 1], QtGui.QTextCursor.KeepAnchor)
         else:
-            cursor = self.textCursor()
-            cursor.setPosition(self.__text_mappings[self.__cur_subtitle])
+            cursor.movePosition(QtGui.QTextCursor.End, QtGui.QTextCursor.KeepAnchor)
 
-            if self.__cur_subtitle < len(self.__text_mappings) - 1:
-                cursor.setPosition(self.__text_mappings[self.__cur_subtitle + 1], QtGui.QTextCursor.KeepAnchor)
-            else:
-                cursor.movePosition(QtGui.QTextCursor.End, QtGui.QTextCursor.KeepAnchor)
+        self.setTextCursor(cursor)
+        self.ensureCursorVisible()
 
-            self.setTextCursor(cursor)
-            self.ensureCursorVisible()
-
-            cursor.setPosition(self.__text_mappings[self.__cur_subtitle])
-            self.setTextCursor(cursor)
+        cursor.setPosition(self.__text_mappings[self.__cur_subtitle])
+        self.setTextCursor(cursor)
 
 
     def set_active_subtitle(self, id):
+        """Sets current subtitle."""
+
         if self.__cur_subtitle == id:
             return
-
-        LOG.debug("Setting active subtitle to [%s].", id)
 
         if self.__cur_subtitle >= 0:
             self.__set_subtitle_format(self.__cur_subtitle, self.__char_format_default)
@@ -269,19 +278,17 @@ class SubtitleWidget(QtGui.QTextEdit):
         if id >= 0:
             self.__set_subtitle_format(id, self.__char_format_active)
 
-        # TODO: remove formatting
-#            emit this->current_subtitle_changed(
-#                id >=0 ? this->subtitles.at(id).text : QString() )
-
         self.__cur_subtitle = id
         self.__scroll_to_active()
 
 
     def __set_subtitle_format(self, id, format):
+        """Sets a character format for a specified subtitle."""
+
         cursor = self.textCursor()
         cursor.setPosition(self.__text_mappings[id])
 
-        if id != len(self.__subtitles) - 1:
+        if id != len(self.__text_mappings) - 1:
             cursor.setPosition(self.__text_mappings[id + 1], QtGui.QTextCursor.KeepAnchor)
         else:
             cursor.movePosition(QtGui.QTextCursor.End, QtGui.QTextCursor.KeepAnchor)
