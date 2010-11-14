@@ -119,25 +119,31 @@ class SubtitleReader(QtCore.QObject):
                 elif state == "timings":
                     if line:
                         match = timings_re.match(line)
-                        if not match:
-                            raise Error(self.tr("Invalid subtitle timings '{0}' at line {1}."), line, line_num)
 
-                        start_time = (
-                            int(match.group(1)) * constants.HOUR_SECONDS +
-                            int(match.group(2)) * constants.MINUTE_SECONDS +
-                            int(match.group(3))
-                        ) * 1000 + int(match.group(4))
+                        if match:
+                            start_time = (
+                                int(match.group(1)) * constants.HOUR_SECONDS +
+                                int(match.group(2)) * constants.MINUTE_SECONDS +
+                                int(match.group(3))
+                            ) * 1000 + int(match.group(4))
 
-                        end_time = (
-                            int(match.group(5)) * constants.HOUR_SECONDS +
-                            int(match.group(6)) * constants.MINUTE_SECONDS +
-                            int(match.group(7))
-                        ) * 1000 + int(match.group(8))
+                            end_time = (
+                                int(match.group(5)) * constants.HOUR_SECONDS +
+                                int(match.group(6)) * constants.MINUTE_SECONDS +
+                                int(match.group(7))
+                            ) * 1000 + int(match.group(8))
 
-                        LOG.debug("Timings: %s - %s.", start_time, end_time)
+                            LOG.debug("Timings: %s - %s.", start_time, end_time)
 
-                        state = "subtitle"
-                        text = ""
+                            state = "subtitle"
+                            text = ""
+                        else:
+                            if id_re.match(line):
+                                # Sometimes ids appear without timings and any text
+                                state = "id"
+                                repeat = True
+                            else:
+                                raise Error(self.tr("Invalid subtitle timings '{0}' at line {1}."), line, line_num)
                     else:
                         if eof:
                             raise Error(self.tr("Unexpected end of file."))
@@ -158,12 +164,8 @@ class SubtitleReader(QtCore.QObject):
                             state = "id"
                             repeat = True
                         else:
-                            # TODO
-#                            pass
-                            if eof:
-                                raise Error(self.tr("Unexpected end of file."))
-                            else:
-                                raise Error(self.tr("Missing subtitle text for subtitle {0} at line {1}."), id, line_num)
+                            # Subtitle files sometimes have a few subtitles without text at all
+                            pass
                     else:
                         LOG.debug("Text: %s", line)
 
