@@ -77,14 +77,19 @@ class SubtitleReader(QtCore.QObject):
         subtitles = []
 
         with codecs.open(path, encoding = encoding) if encoding else open(path) as file:
+            # Cut off UTF-8 byte order mark which confuses re module
+            data = file.read(1)
+            if data[:1] != u"\ufeff":
+                file.seek(0)
+
             repeat = False
             state = "id"
             last_line = ""
             line_num = 0
             eof = False
 
-            id_re = re.compile(r"^(\d+)$")
-            timings_re = re.compile(r"^(\d{1,2}):(\d{1,2}):(\d{1,2}),(\d{1,3})\s*-->\s*(\d{1,2}):(\d{1,2}):(\d{1,2}),(\d{1,3})$")
+            id_re = re.compile(r"^\s*(\d+)\s*$")
+            timings_re = re.compile(r"^\s*(\d{1,2}):(\d{1,2}):(\d{1,2}),(\d{1,3})\s*-->\s*(\d{1,2}):(\d{1,2}):(\d{1,2}),(\d{1,3})\s*$")
 
             while not eof:
                 if repeat:
@@ -154,11 +159,11 @@ class SubtitleReader(QtCore.QObject):
                             repeat = True
                         else:
                             # TODO
-                            pass
-#                            if eof:
-#                                raise Error(self.tr("Unexpected end of file."))
-#                            else:
-#                                raise Error(self.tr("Missing subtitle text for subtitle {0} at line {1}."), id, line_num)
+#                            pass
+                            if eof:
+                                raise Error(self.tr("Unexpected end of file."))
+                            else:
+                                raise Error(self.tr("Missing subtitle text for subtitle {0} at line {1}."), id, line_num)
                     else:
                         LOG.debug("Text: %s", line)
 
