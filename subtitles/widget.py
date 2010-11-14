@@ -34,12 +34,14 @@ class SubtitlesWidget(QtGui.QWidget):
     def __init__(self, parent = None):
         QtGui.QWidget.__init__(self, parent)
 
+        self.setVisible(False)
         main_layout = QtGui.QBoxLayout(QtGui.QBoxLayout.TopToBottom)
         main_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(main_layout)
 
         self.__cur_text = QtGui.QLabel()
         self.__cur_text.setAlignment(QtCore.Qt.AlignCenter)
+        self.__cur_text.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
         # TODO
         font = self.__cur_text.font()
         font.setPointSize(11)
@@ -140,8 +142,10 @@ class SubtitlesWidget(QtGui.QWidget):
                 subtitles["cur_id"] = cur_id
 
                 if cur_id < 0:
-                    if not subtitle_id:
-                        self.__cur_text.setText("")
+                    # TODO
+                    pass
+#                    if not subtitle_id:
+#                        self.__cur_text.setText("")
                 else:
                     subtitles = subtitles["data"][cur_id]
 
@@ -180,6 +184,9 @@ class SubtitleWidget(QtGui.QTextEdit):
 
     def __init__(self, subtitles, parent = None):
         QtGui.QTextEdit.__init__(self, parent)
+
+        # TODO: the same with horiz + wrapping
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
         self.__char_format_default = QtGui.QTextCharFormat()
         self.__char_format_active = QtGui.QTextCharFormat()

@@ -153,10 +153,12 @@ class SubtitleReader(QtCore.QObject):
                             state = "id"
                             repeat = True
                         else:
-                            if eof:
-                                raise Error(self.tr("Unexpected end of file."))
-                            else:
-                                raise Error(self.tr("Missing subtitle text for subtitle {0} at line {1}."), id, line_num)
+                            # TODO
+                            pass
+#                            if eof:
+#                                raise Error(self.tr("Unexpected end of file."))
+#                            else:
+#                                raise Error(self.tr("Missing subtitle text for subtitle {0} at line {1}."), id, line_num)
                     else:
                         LOG.debug("Text: %s", line)
 

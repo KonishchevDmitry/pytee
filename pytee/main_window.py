@@ -49,12 +49,16 @@ class MainWindow(QtGui.QWidget):
         self.setup_hotkeys()
         self.resize(640, 480)
 
-        self.open()
+# TODO
+#        self.open()
 
 
     def open(self):
 
+        # TODO FIXME
         movie_path = "/my_files/temp/Scrubs - 2x20.avi"
+        import sys
+        movie_path = sys.argv[1]
 
         alternatives, subtitles = self.__find_related_media_files(movie_path)
         LOG.debug("Found alternative movies: %s.", alternatives)
@@ -78,6 +82,7 @@ class MainWindow(QtGui.QWidget):
                 return self.__handler(*self.__args)
 
         hotkeys = {
+            # TODO
             "O":                     "osd_toggle",
             "Space":                 "pause",
             "Left":                  "seek-3",
@@ -85,12 +90,15 @@ class MainWindow(QtGui.QWidget):
             "Up":                    "volume+10",
             "Down":                  "volume-10",
 
+            # TODO
+            "G":                     "open",
             "Q":                     "quit",
             "Escape":                "quit",
             QtGui.QKeySequence.Quit: "quit"
         }
 
         actions = {
+            "open": lambda: self.open(),
             "quit": lambda: self.close()
         }
 

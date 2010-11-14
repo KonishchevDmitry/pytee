@@ -161,7 +161,9 @@ class MPlayer(QtCore.QObject):
                 "-slave", "-quiet",
                 "-input", "nodefault-bindings", "-noconfig", "all",
                 "-vo", "xv,sdl,x11",
-                "-ao", "alsa,oss,sdl,arts", "-framedrop", "-contrast", "0", "-brightness", "0", "-hue", "0", "-saturation", "0", "-identify",
+                # TODO: without this pause may not work properly because of Pulse audio
+                "-ao", "sdl",
+#                "-ao", "alsa,oss,sdl,arts", "-framedrop", "-contrast", "0", "-brightness", "0", "-hue", "0", "-saturation", "0", "-identify",
                 #"-vo", "gl2",
                 #"-vo", "xv",
 #                "-zoom",
