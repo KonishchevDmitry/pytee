@@ -99,7 +99,7 @@ class SubtitlesWidget(QtGui.QWidget):
 
             # Creating the widgets -->
             for subtitle, text_alignment in zip(self.__subtitles, alignment):
-                widget = SubtitleWidget(subtitle_data, text_alignment)
+                widget = SubtitleWidget(subtitle["data"], text_alignment)
                 self.__subtitle_widgets.append(widget)
                 self.__subtitle_layout.addWidget(widget)
             # Creating the widgets <--
