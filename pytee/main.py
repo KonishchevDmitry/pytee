@@ -1,25 +1,31 @@
 #!/usr/bin/env python
 
-# PyQt tutorial 3
+"""pytee's startup module."""
 
+import os
+import sys
+
+# Setting up paths to modules.
+INSTALL_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, INSTALL_DIR)
+sys.path.insert(1, os.path.join(INSTALL_DIR, "pysd"))
 
 import logging
-import sys
-import os
 from PySide import QtCore, QtGui
 
-install_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, install_dir)
-sys.path.insert(1, os.path.join(install_dir, "pysd"))
 from pytee.main_window import MainWindow
 from cl.core import *
 
-for log in ("player", "cl", "mplayer", "pytee", "subtitles.widget", "subtitles.readeR"):
-    LOG = logging.getLogger(log)
-    handler = logging.StreamHandler(sys.stderr)
-    LOG.addHandler(handler)
-    LOG.setLevel(logging.DEBUG)
+debug_mode = True
 
+class LogFilter(logging.Filter):
+    def filter(self, record):
+        return not record.name == "subtitles.reader"
+
+import cl.log
+cl.log.setup(debug_mode, filter = LogFilter())
+
+LOG = logging.getLogger("pytee.main")
 
 import signal
 signal.signal(signal.SIGCHLD, signal.SIG_IGN)
