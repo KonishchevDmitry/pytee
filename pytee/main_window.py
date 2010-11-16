@@ -68,7 +68,7 @@ class MainWindow(QtGui.QWidget):
 
     #        movie_path = "/my_files/english/Lie To Me/Lie.To.Me.s03e03.rus.LostFilm.TV.avi"
 
-            self.__player.open(movie_path)
+            self.__player.open([ movie_path ] + alternatives)
         except Exception, e:
             print "ZZZZZZZZZZZZZZZZZZZZZ", e
             LOG.exception(">>>>>>>>>>>>>>>>>> %s", e)
@@ -96,14 +96,21 @@ class MainWindow(QtGui.QWidget):
 
             # TODO
             "G":                     "open",
+
+            "A":                     "switch_alternative",
+            # TODO
+#            "J":                     "next_alternative",
+#            "K":                     "prev_alternative",
+
             "Q":                     "quit",
             "Escape":                "quit",
             QtGui.QKeySequence.Quit: "quit"
         }
 
         actions = {
-            "open": lambda: self.open(),
-            "quit": lambda: self.close()
+            "open":               lambda: self.open(),
+            "switch_alternative": lambda: self.__player.switch_alternative(),
+            "quit":               lambda: self.close()
         }
 
         for key_name, action_name in hotkeys.iteritems():

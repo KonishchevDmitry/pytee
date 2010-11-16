@@ -67,6 +67,13 @@ class MPlayer(QtCore.QObject):
             self.__process.terminate()
 
 
+    def cur_pos(self):
+        """Returns current time position in milliseconds."""
+
+        cur_pos = self.__get_property("time_pos", float, force_pausing = True, suppress_debug = True)
+        return int(cur_pos * 1000)
+
+
     def run(self, *args):
         """Runs MPlayer."""
 
@@ -95,10 +102,16 @@ class MPlayer(QtCore.QObject):
         self.__command("pause")
 
 
-    def seek(self, seconds):
+    def paused(self):
+        """Returns True if the MPlayer is paused."""
+
+        return self.__get_property("pause", force_pausing = True, suppress_debug = True) == "yes"
+
+
+    def seek(self, seconds, absolute = False):
         """Seeks for specified number of seconds."""
 
-        self.__command("seek {0} 0".format(seconds))
+        self.__command("seek {0} {1}".format(seconds, 2 if absolute else 0))
 
 
     def volume(self, value):
@@ -112,9 +125,9 @@ class MPlayer(QtCore.QObject):
 
         try:
             if self.__movie:
-                if self.__get_property("pause", force_pausing = True, suppress_debug = True) == "no":
-                    cur_pos = self.__get_property("time_pos", float, force_pausing = True, suppress_debug = True)
-                    self.pos_changed.emit(int(cur_pos * 1000))
+# TODO
+#                if self.__get_property("pause", force_pausing = True, suppress_debug = True) == "no":
+                self.pos_changed.emit(self.cur_pos())
         except Exception, e:
             LOG.error("MPlayer current status update failed. %s", e)
 
@@ -177,7 +190,9 @@ class MPlayer(QtCore.QObject):
             self.__stdin = self.__process.stdin
             self.__stdout = self.__process.stdout
 
-            aspect_ratio = self.__get_property("aspect", float)
+#            aspect_ratio = self.__get_property("aspect", float)
+            self.__command("pause")
+            aspect_ratio = self.__get_property("aspect", float, force_pausing = True)
             self.__movie = Movie(movie_path, aspect_ratio)
 
             LOG.debug("We successfully started MPlayer for movie %s.", self.__movie)
