@@ -38,6 +38,8 @@ def main():
 
     main_window = MainWindow()
     main_window.show()
+
+    main_window.open(sys.argv[1])
     app.exec_()
 
     LOG.info("Exiting...")

@@ -19,6 +19,13 @@ LOG = logging.getLogger("pytee.main_window")
 class MainWindow(QtGui.QWidget):
     """The application's main window."""
 
+    _open_signal = QtCore.Signal(str)
+    """Opens a movie for playing.
+
+    It's a signal to guarantee that real open() method will be called in the
+    main loop.
+    """
+
     __player = None
     """The player widget."""
 
@@ -48,30 +55,11 @@ class MainWindow(QtGui.QWidget):
 
         self.setup_hotkeys()
         self.resize(640, 480)
-
-# TODO
-#        self.open()
+        self._open_signal.connect(self._open, QtCore.Qt.QueuedConnection)
 
 
-    def open(self):
-
-        # TODO FIXME
-        try:
-            movie_path = "/my_files/temp/Scrubs - 2x20.avi"
-            import sys
-            movie_path = sys.argv[1]
-
-            alternatives, subtitles = self.__find_related_media_files(movie_path)
-            LOG.debug("Found alternative movies: %s.", alternatives)
-            LOG.debug("Found subtitles: %s.", subtitles)
-            self.__subtitles.load(subtitles)
-
-    #        movie_path = "/my_files/english/Lie To Me/Lie.To.Me.s03e03.rus.LostFilm.TV.avi"
-
-            self.__player.open([ movie_path ] + alternatives)
-        except Exception, e:
-            print "ZZZZZZZZZZZZZZZZZZZZZ", e
-            LOG.exception(">>>>>>>>>>>>>>>>>> %s", e)
+    def open(self, movie_path):
+        self._open_signal.emit(movie_path)
 
 
     def setup_hotkeys(self):
@@ -94,9 +82,6 @@ class MainWindow(QtGui.QWidget):
             "Up":                    "volume+10",
             "Down":                  "volume-10",
 
-            # TODO
-            "G":                     "open",
-
             "A":                     "switch_alternative",
             # TODO
 #            "J":                     "next_alternative",
@@ -108,7 +93,6 @@ class MainWindow(QtGui.QWidget):
         }
 
         actions = {
-            "open":               lambda: self.open(),
             "switch_alternative": lambda: self.__player.switch_alternative(),
             "quit":               lambda: self.close()
         }
@@ -143,6 +127,26 @@ class MainWindow(QtGui.QWidget):
             action.setShortcut(key)
             action.triggered.connect(Handler_proxy(handler, args))
             self.addAction(action)
+
+
+    def _open(self, movie_path):
+        """Does all work for opening a movie file."""
+
+        LOG.info("Opening '%s'...", movie_path)
+
+        # TODO FIXME
+        try:
+            alternatives, subtitles = self.__find_related_media_files(movie_path)
+            LOG.debug("Found alternative movies: %s.", alternatives)
+            LOG.debug("Found subtitles: %s.", subtitles)
+            self.__subtitles.load(subtitles)
+
+    #        movie_path = "/my_files/english/Lie To Me/Lie.To.Me.s03e03.rus.LostFilm.TV.avi"
+
+            self.__player.open([ movie_path ] + alternatives)
+        except Exception, e:
+            print "ZZZZZZZZZZZZZZZZZZZZZ", e
+            LOG.exception(">>>>>>>>>>>>>>>>>> %s", e)
 
 
     def __find_related_media_files(self, movie_path):
