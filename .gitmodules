@@ -1,0 +1,3 @@
+[submodule "pysd"]
+	path = pysd
+	url = git@github.com:KonishchevDmitry/pysd.git
