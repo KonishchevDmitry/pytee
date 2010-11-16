@@ -5,7 +5,7 @@
 import os
 import logging
 
-import pysd
+import pysd.pysd
 from PySide import QtCore, QtGui
 
 from cl.core import *
@@ -155,7 +155,7 @@ class MainWindow(QtGui.QWidget):
         translation and subtitle files.
         """
 
-        tools = pysd.Tv_show_tools()
+        tools = pysd.pysd.Tv_show_tools()
         movie_path = os.path.abspath(movie_path)
         movie_file_name = os.path.basename(movie_path)
         movie_dir_path = os.path.dirname(movie_path)
@@ -163,8 +163,8 @@ class MainWindow(QtGui.QWidget):
             tools.get_info_from_filename(movie_file_name)
         movie_names = set(movie_names)
 
-        media_extensions = set(( ext[1:] for ext in pysd.MEDIA_EXTENSIONS ))
-        subtitle_extensions = set(( ext[1:] for ext in pysd.SUBTITLE_EXTENSIONS ))
+        media_extensions = set(( ext[1:] for ext in pysd.pysd.MEDIA_EXTENSIONS ))
+        subtitle_extensions = set(( ext[1:] for ext in pysd.pysd.SUBTITLE_EXTENSIONS ))
         extensions = media_extensions | subtitle_extensions
 
         alternatives = []
@@ -178,7 +178,7 @@ class MainWindow(QtGui.QWidget):
                 try:
                     names, season, episode, delimiter, extra_info = tools.get_info_from_filename(file_name)
                     names = set(names)
-                except pysd.Not_found:
+                except pysd.pysd.Not_found:
                     continue
 
                 if movie_names.intersection(names) and movie_season == season and movie_episode == episode:

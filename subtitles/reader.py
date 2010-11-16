@@ -9,7 +9,7 @@ import re
 
 from PySide import QtCore
 
-import pysd
+import pysd.pysd
 
 from cl import constants
 from cl.core import *
@@ -54,7 +54,7 @@ class SubtitleReader(QtCore.QObject):
         """
 
         if len(language) == 2:
-            language = pysd.LANGUAGES.get(language, "unknown")
+            language = pysd.pysd.LANGUAGES.get(language, "unknown")
 
         encodings = self.__encodings.get(language, [])
         encodings = encodings + [ "utf8" ]

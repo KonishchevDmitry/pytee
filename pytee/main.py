@@ -8,8 +8,9 @@ import sys
 import os
 from PySide import QtCore, QtGui
 
-sys.path.append(os.path.dirname(__file__))
-sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "pysd"))
+install_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, install_dir)
+sys.path.insert(1, os.path.join(install_dir, "pysd"))
 from pytee.main_window import MainWindow
 from cl.core import *
 
