@@ -28,7 +28,7 @@ class MPlayerWidget(QtGui.QWidget):
 
     pos_changed = QtCore.Signal(int)
     """
-    Emitted with time in milliseconds when current time position in playing
+    Emitted with time in milliseconds when current time position in the main
     movie changes.
     """
 
@@ -173,7 +173,7 @@ class MPlayerWidget(QtGui.QWidget):
         movie changes.
         """
 
-        if self.sender() is self.__player():
+        if self.sender() is self.__player() and self.__is_main_movie():
             self.pos_changed.emit(pos)
 
 
