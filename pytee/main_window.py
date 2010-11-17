@@ -55,7 +55,18 @@ class MainWindow(QtGui.QWidget):
 
         self.setup_hotkeys()
         self.resize(640, 480)
+
         self._open_signal.connect(self._open, QtCore.Qt.QueuedConnection)
+
+
+    def __del__(self):
+        self.__close()
+
+
+    def closeEvent(self, event):
+        """QWidget closeEvent()."""
+
+        self.__close()
 
 
     def open(self, movie_path):
@@ -147,6 +158,10 @@ class MainWindow(QtGui.QWidget):
         except Exception, e:
             print "ZZZZZZZZZZZZZZZZZZZZZ", e
             LOG.exception(">>>>>>>>>>>>>>>>>> %s", e)
+
+
+    def __close(self):
+        """Frees all allocated resources and stops all running processes."""
 
 
     def __find_related_media_files(self, movie_path):

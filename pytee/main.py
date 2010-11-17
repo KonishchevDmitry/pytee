@@ -2,49 +2,51 @@
 
 """pytee's startup module."""
 
-import os
 import sys
 
-# Setting up paths to modules.
+if sys.version_info < (2, 6):
+    if __name__ == "__main__":
+        sys.exit("Error: pytee needs python >= 2.6.")
+    else:
+        raise Exception("pytee needs python >= 2.6")
+
+import os
+
+# Setting up the module paths.
 INSTALL_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, INSTALL_DIR)
 sys.path.insert(1, os.path.join(INSTALL_DIR, "pysd"))
 
 import logging
+import signal
+
 from PySide import QtCore, QtGui
 
 from pytee.main_window import MainWindow
-from cl.core import *
+import cl.log
+import cl.signals
 
-debug_mode = True
+LOG = logging.getLogger("pytee.main")
+
 
 class LogFilter(logging.Filter):
     def filter(self, record):
         return not record.name == "subtitles.reader"
 
-import cl.log
-cl.log.setup(debug_mode, filter = LogFilter())
-
-LOG = logging.getLogger("pytee.main")
-
-import signal
-signal.signal(signal.SIGCHLD, signal.SIG_IGN)
-signal.siginterrupt(signal.SIGCHLD, False)
-signal.siginterrupt(signal.SIGPIPE, False)
-for i in xrange(1, 100):
-    try:
-        signal.siginterrupt(i, False)
-    except:
-        pass
-
 
 def main():
     """The application's main function."""
+
+    debug_mode = True
+
+    cl.log.setup(debug_mode, filter = LogFilter())
+    cl.signals.setup()
 
     app = QtGui.QApplication(sys.argv)
 
     main_window = MainWindow()
     main_window.show()
+    cl.signals.connect(main_window.close)
 
     main_window.open(sys.argv[1])
     app.exec_()
