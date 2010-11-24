@@ -19,6 +19,9 @@ class _UnixSignalDispatcher(QtCore.QObject):
     connected to it.
     """
 
+    received = False
+    """True if we've received any UNIX signal."""
+
     signal_received = QtCore.Signal(int)
     """Emitted when we receive a UNIX signal."""
 
@@ -29,6 +32,7 @@ class _UnixSignalDispatcher(QtCore.QObject):
 
     def signal(self, signum):
         LOG.debug("%s UNIX signal received.", signum)
+        self.received = True
         self.signal_received.emit(signum)
 
 
@@ -46,6 +50,12 @@ def connect(slot):
     """
 
     return _DISPATCHER.signal_received.connect(slot, QtCore.Qt.QueuedConnection)
+
+
+def received():
+    """Returns True if we've received any deadly UNIX signal."""
+
+    return _DISPATCHER.received
 
 
 def setup():

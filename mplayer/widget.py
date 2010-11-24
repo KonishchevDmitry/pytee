@@ -6,21 +6,37 @@ import logging
 
 from PySide import QtCore, QtGui
 
+from cl.core import *
+
+import cl.gui.messages
+
 from mplayer.process import MPlayer
 
 __all__ = [ "MPlayerWidget" ]
 LOG = logging.getLogger("mplayer.widget")
 
 
-def Control(func):
-    """Logs all control method calls."""
+def MovieControl(func):
+    """Wraps methods that controls a movie playing."""
 
     def decorator(self, *args):
         LOG.info("Player control: %s%s.", func.func_name,
             "({0})".format(args[0]) if len(args) == 1 else args)
-        return func(self, *args)
+
+        try:
+            if self.opened():
+                return func(self, *args)
+            else:
+                raise Error(self.tr("No movie is opened."))
+        except Exception, e:
+            LOG.warning("Player control request rejected. %s", EE(e))
 
     return decorator
+
+
+PlayerControl = MovieControl
+"""Wraps methods that controls a whole player."""
+
 
 
 class MPlayerWidget(QtGui.QWidget):
@@ -32,12 +48,24 @@ class MPlayerWidget(QtGui.QWidget):
     movie changes.
     """
 
+    failed = QtCore.Signal(str)
+    """Emitted if the player has failed to open a movie."""
+
+    finished = QtCore.Signal()
+    """
+    Emitted if the main movie finished its playing and the player has closed
+    due to this.
+    """
+
+
     __players = None
     """Running MPlayer instances."""
 
-    # TODO
-    __cur_id = -1
+    __cur_id = None
     """Index of currently active MPlayer instance."""
+
+    __cur_alt_id = None
+    """Index of currently selected alternative movie."""
 
     __display_widgets = None
     """Widgets that display the video."""
@@ -46,8 +74,24 @@ class MPlayerWidget(QtGui.QWidget):
     def __init__(self, parent = None):
         QtGui.QWidget.__init__(self, parent)
 
+        palette = self.palette()
+        palette.setColor(QtGui.QPalette.Background, QtGui.QColor(0, 0, 0))
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
+
         self.__players = []
         self.__display_widgets = []
+
+
+    def __del__(self):
+        self.close()
+
+
+    def close(self):
+        """Closes all opened movies."""
+
+        for player in self.__players[:]:
+            self.__close_movie(player)
 
 
     def get_control_actions(self):
@@ -57,85 +101,125 @@ class MPlayerWidget(QtGui.QWidget):
         """
 
         return {
-            "osd_toggle": lambda: self.osd_toggle(),
-            "pause":      lambda: self.pause(),
-            "seek":       lambda seconds: self.seek(seconds),
-            "volume":     lambda value: self.volume(value)
+            "osd_toggle":         lambda: self.osd_toggle(),
+            "pause":              lambda: self.pause(),
+            "seek":               lambda seconds: self.seek(seconds),
+            "volume":             lambda value: self.volume(value),
+            "prev_alternative":   lambda: self.previous_alternative(),
+            "next_alternative":   lambda: self.next_alternative(),
+            "switch_alternative": lambda: self.switch_alternative()
         }
 
 
-    # TODO
-    def open(self, movie_paths):
-        for movie_path in movie_paths:
-            player = MPlayer()
-            self.__players.append(player)
-            player.started.connect(self._mplayer_started)
-            player.failed.connect(self._mplayer_failed)
-            # TODO
-            player.pos_changed.connect(self._pos_changed)
+    @PlayerControl
+    def next_alternative(self):
+        """Switches to the next alternative movie."""
 
-            display_widget = QtGui.QWidget(self)
-            self.__display_widgets.append(display_widget)
-            display_widget.lower()
+        self.__cur_alt_id += 1
+        if self.__cur_alt_id >= len(self.__players):
+            self.__cur_alt_id = min(1, len(self.__players) - 1)
 
-            player.run(movie_path, display_widget.winId())
+        self.__switch_to(self.__cur_alt_id)
 
 
-    @Control
+    def open(self, movie_path, alternatives):
+        """Opens a movie and optional alternative movies for playing."""
+
+        self.close()
+
+        try:
+            self.__cur_id = 0
+            self.__cur_alt_id = int(bool(len(alternatives)))
+
+            for movie_id, movie_path in enumerate([ movie_path ] + alternatives):
+                player = MPlayer()
+
+                player.failed.connect(self._mplayer_failed)
+                player.started.connect(self._mplayer_started)
+                player.pos_changed.connect(self._pos_changed)
+                player.terminated.connect(self._mplayer_terminated, QtCore.Qt.QueuedConnection)
+
+                display_widget = QtGui.QWidget(self)
+                display_widget.setVisible(False)
+
+                try:
+                    player.run(movie_path, display_widget.winId(), bool(movie_id))
+                except Exception, e:
+                    display_widget.setParent(None)
+
+                    if movie_id:
+                        cl.gui.messages.warning(self, self.tr("Unable to play the movie."),
+                            Error(self.tr("Unable to play '{0}':"), movie_path).append(EE(e)), block = False)
+                    else:
+                        raise Error(self.tr("Unable to play '{0}':"), movie_path).append(e)
+                else:
+                    self.__display_widgets.append(display_widget)
+                    self.__players.append(player)
+        except:
+            self.close()
+            raise
+
+
+    def opened(self):
+        """Returns True if any movie is opened."""
+
+        return bool(self.__players)
+
+
+    @MovieControl
     def osd_toggle(self):
         """Toggles the OSD displaying."""
 
         self.__player().osd_toggle()
 
 
-    def paintEvent(self, event):
-        """QWidget paint event handler"""
-
-        painter = QtGui.QPainter(self)
-        painter.setBrush(QtGui.QColor(0, 0, 0))
-        painter.drawRect(0, 0, self.width(), self.height())
-
-
-    @Control
+    @MovieControl
     def pause(self):
         """Pauses the movie playing."""
 
         self.__player().pause()
-# TODO
-#        self.__display_widget.raise_()
+
+
+    @PlayerControl
+    def previous_alternative(self):
+        """Switches to the previous alternative movie."""
+
+        self.__cur_alt_id -= 1
+        if self.__cur_alt_id < 1:
+            self.__cur_alt_id = len(self.__players) - 1
+
+        self.__switch_to(self.__cur_alt_id)
 
 
     def resizeEvent(self, event):
-        """QWidget resize event handler"""
+        """QWidget's resize event handler."""
 
-        # TODO
-        if self.__opened():
-            for player in self.__players:
+        for player in self.__players:
+            if player.running():
                 self.__scale_display_widget(self.__display_widget(player), player.get_movie().get_aspect_ratio())
 
 
-    @Control
+    @MovieControl
     def seek(self, seconds):
         """Seeks for specified number of seconds."""
 
         self.__player().seek(seconds)
 
 
-    @Control
+    @PlayerControl
     def switch_alternative(self):
         """
         Switches to alternative movie if the main movie is playing now, or
         switches to the main movie if an alternative movie is playing now.
         """
 
-        # TODO
         if self.__cur_id:
             self.__switch_to(0)
         else:
-            self.__switch_to(1)
+            self.__switch_to(min(self.__cur_alt_id, len(self.__players) - 1))
 
 
-    @Control
+    @MovieControl
     def volume(self, value):
         """Increase/decrease volume."""
 
@@ -143,28 +227,41 @@ class MPlayerWidget(QtGui.QWidget):
 
 
     def _mplayer_failed(self, error):
-        """Called when MPlayer failed to start."""
+        """Called when MPlayer failed to open a movie."""
 
-        LOG.error("Starting MPlayer failed: %s", error)
         player = self.sender()
 
         if self.__is_main_movie(player):
-            self.__close()
+            self.close()
+            self.failed.emit(error)
         else:
+            if self.__player() is player:
+                self.__switch_to(0)
             self.__close_movie(player)
 
 
     def _mplayer_started(self):
-        """Called on MPlayer start."""
+        """Called when MPlayer successfully started."""
 
         player = self.sender()
         display_widget = self.__display_widget(player)
         self.__scale_display_widget(display_widget, player.get_movie().get_aspect_ratio())
 
+        if self.__player() is player:
+            display_widget.setVisible(True)
+
+
+    def _mplayer_terminated(self):
+        """Called on MPlayer termination."""
+
+        player = self.sender()
+        if player not in self.__players:
+            return
+
+        self.__display_widget(player).setVisible(False)
+
         if self.__is_main_movie(player):
-            # TODO
-            display_widget.setHidden(False)
-            self.__cur_id = 0
+            self.finished.emit()
 
 
     def _pos_changed(self, pos):
@@ -177,20 +274,15 @@ class MPlayerWidget(QtGui.QWidget):
             self.pos_changed.emit(pos)
 
 
-    def __close(self):
-        """Closes all movies."""
-
-        for player in self.__players[:]:
-            self.__close_movie(player)
-
-
     def __close_movie(self, player):
         """Closes a movie."""
 
         movie_id = self.__players.index(player)
-        # TODO terminate
+
+        player.terminate()
         del self.__players[movie_id]
-        # TODO destroy
+
+        self.__display_widgets[movie_id].setParent(None)
         del self.__display_widgets[movie_id]
 
 
@@ -215,15 +307,7 @@ class MPlayerWidget(QtGui.QWidget):
     def __player(self):
         """Returns currently active MPlayer instance."""
 
-        # TODO
-        if self.__cur_id >= 0:
-            return self.__players[self.__cur_id]
-
-
-    def __opened(self):
-        """Returns True if any movie is opened at this moment."""
-
-        return self.__player() and self.__player().get_movie()
+        return self.__players[self.__cur_id]
 
 
     def __scale_display_widget(self, widget, aspect_ratio):
@@ -249,18 +333,36 @@ class MPlayerWidget(QtGui.QWidget):
     def __switch_to(self, movie_id):
         """Switches to a movie with the specified id."""
 
-        if not self.__player().paused():
-            self.__player().pause()
-        self.__display_widget().setHidden(True)
+        if self.__cur_id == movie_id:
+            return
 
+        LOG.debug("Switching to the movie %s from %s.", movie_id, self.__cur_id)
+
+        try:
+            if self.__player().running():
+                if not self.__player().paused():
+                    self.__player().pause()
+        except Exception, e:
+            LOG.debug("Unable to pause current movie. %s", EE(e))
+
+        self.__display_widget().setVisible(False)
+
+        seek_to = -1
         if self.__is_main_movie():
-            cur_pos = self.__player().cur_pos()
-            self.__cur_id = movie_id
-            # TODO
-            self.__player().seek(float(cur_pos) / 1000, True)
-        else:
-            self.__cur_id = movie_id
-            self.__player().pause()
+            try:
+                seek_to = self.__player().cur_pos()
+            except Exception, e:
+                LOG.debug("Unable to get movie's current position. %s", EE(e))
 
-        self.__display_widget().setHidden(False)
+        self.__cur_id = movie_id
+        if self.__player().running():
+            try:
+                if seek_to < 0:
+                    self.__player().pause()
+                else:
+                    self.__player().seek(float(seek_to) / 1000, True)
+            except Exception, e:
+                LOG.debug("Unable to continue playing of the target movie. %s", EE(e))
+
+        self.__display_widget().setVisible(self.__player().running())
 

@@ -6,6 +6,10 @@ import logging
 
 from PySide import QtCore, QtGui
 
+from cl.core import *
+
+import cl.gui.messages
+
 import subtitles.reader as subtitle_reader
 
 __all__ = [ "SubtitlesWidget" ]
@@ -39,6 +43,8 @@ class SubtitlesWidget(QtGui.QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(main_layout)
 
+        self.__subtitles = []
+
         # Text of a current subtitle -->
         self.__cur_text = QtGui.QLabel()
         self.__cur_text.setAlignment(QtCore.Qt.AlignCenter)
@@ -57,60 +63,73 @@ class SubtitlesWidget(QtGui.QWidget):
         self.__subtitle_widgets = []
 
 
-    # TODO exceptions
-    def load(self, subtitles):
-        """Loads subtitles for displaying in the widget.
+    def close(self):
+        """Closes previously opened subtitles."""
 
-        subtitles -- a list of tuples (subtitle_path, subtitle_language)
-        """
-
+        self.__cur_pos = 0
         self.__subtitles = []
+        self.__cur_text.setText("")
+
         for widget in self.__subtitle_widgets:
             self.__subtitle_layout.removeWidget(widget)
         self.__subtitle_widgets = []
 
-        try:
-            # Reading the subtitle files -->
-            for subtitle in sorted(subtitles, cmp = self.__subtitle_cmp):
-                subtitle_data = subtitle_reader.read(*subtitle)
+        self.setVisible(False)
 
+
+    def open(self, subtitles):
+        """Opens subtitles for displaying in the widget.
+
+        subtitles -- a list of tuples (subtitle_path, subtitle_language)
+        """
+
+        self.close()
+
+        # Reading the subtitle files -->
+        errors = []
+
+        for subtitle in sorted(subtitles, cmp = self.__subtitle_cmp):
+            try:
+                subtitle_data = subtitle_reader.read(*subtitle)
+            except Exception, e:
+                errors.append(EE(e))
+            else:
                 self.__subtitles.append({
                     "cur_id":    -1,
                     "find_from": -1,
                     "data":      subtitle_data
                 })
-            # Reading the subtitle files <--
 
-            # Choosing the proper alignment -->
-            if len(self.__subtitles) == 3:
-                alignment = (
-                    QtCore.Qt.AlignRight,
-                    QtCore.Qt.AlignCenter,
-                    QtCore.Qt.AlignLeft
-                )
-            elif len(self.__subtitles) == 2:
-                alignment = (
-                    QtCore.Qt.AlignRight,
-                    QtCore.Qt.AlignLeft
-                )
-            else:
-                alignment = ( QtCore.Qt.AlignCenter for i in xrange(0, len(self.__subtitles)) )
-            # Choosing the proper alignment <--
+        if errors:
+            cl.gui.messages.warning(self,
+                self.tr("Unable to open subtitles"), "\n".join(errors), block = False )
+        # Reading the subtitle files <--
 
-            # Creating the widgets -->
-            for subtitle, text_alignment in zip(self.__subtitles, alignment):
-                widget = SubtitleWidget(subtitle["data"], text_alignment)
-                self.__subtitle_widgets.append(widget)
-                self.__subtitle_layout.addWidget(widget)
-            # Creating the widgets <--
+        # Choosing the proper alignment -->
+        if len(self.__subtitles) == 3:
+            alignment = (
+                QtCore.Qt.AlignRight,
+                QtCore.Qt.AlignCenter,
+                QtCore.Qt.AlignLeft
+            )
+        elif len(self.__subtitles) == 2:
+            alignment = (
+                QtCore.Qt.AlignRight,
+                QtCore.Qt.AlignLeft
+            )
+        else:
+            alignment = ( QtCore.Qt.AlignCenter for i in xrange(0, len(self.__subtitles)) )
+        # Choosing the proper alignment <--
 
-            self.__cur_text.setText("")
-            self.__update(self.__cur_pos)
-        except:
-            self.__subtitles = []
-            raise
-        finally:
-            self.setVisible(bool(self.__subtitles))
+        # Creating the widgets -->
+        for subtitle, text_alignment in zip(self.__subtitles, alignment):
+            widget = SubtitleWidget(subtitle["data"], text_alignment)
+            self.__subtitle_widgets.append(widget)
+            self.__subtitle_layout.addWidget(widget)
+        # Creating the widgets <--
+
+        self.__update(self.__cur_pos)
+        self.setVisible(bool(self.__subtitles))
 
 
     def set_pos(self, cur_pos):
@@ -236,10 +255,12 @@ class SubtitleWidget(QtGui.QTextEdit):
 
         QtGui.QTextEdit.showEvent(self, event)
 
-        # We must scroll widget at first time it has been showed - it does
+        # We have to scroll widget at first time it has been showed - it does
         # not scrolls until it has no X window.
         if not self.__been_showed:
             self.__been_showed = True
+            self.horizontalScrollBar().setValue(self.horizontalScrollBar().minimum())
+            self.verticalScrollBar().setValue(self.verticalScrollBar().minimum())
             self.__scroll_to_active()
 
 
@@ -248,7 +269,6 @@ class SubtitleWidget(QtGui.QTextEdit):
         """Scrolls to the current subtitle."""
 
         if self.__cur_subtitle < 0:
-            # TODO scroll to nearest
             return
 
         cursor = self.textCursor()

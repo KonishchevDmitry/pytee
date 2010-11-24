@@ -20,14 +20,14 @@ LOG = logging.getLogger("subtitles.reader")
 MAX_FILE_SIZE = constants.MEGABYTE
 """Maximum size of a subtitle file."""
 
-MAX_FILE_LINE_SIZE = constants.KILOBYTE
-"""Maximum size of a subtitle file line."""
-
 
 class SubtitleReader(QtCore.QObject):
     """A class which implements all logic for reading subtitle files."""
 
-    __encodings = { "rus": [ "cp1251" ] }
+    __encodings = {
+        "rus": [ "cp1251" ],
+        "unknown": [ "cp1251" ]
+    }
     """Language-specific encodings."""
 
 
@@ -95,9 +95,7 @@ class SubtitleReader(QtCore.QObject):
                 if repeat:
                     repeat = False
                 else:
-                    line = file.readline(MAX_FILE_LINE_SIZE)
-                    if(len(line) >= MAX_FILE_LINE_SIZE):
-                        raise Error(self.tr("Too big file line length (>= {0}). May be it is not a subtitle file?"), MAX_FILE_LINE_SIZE)
+                    line = file.readline()
 
                     if line:
                         line = line.strip()

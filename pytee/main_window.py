@@ -8,9 +8,13 @@ import logging
 import pysd.pysd
 from PySide import QtCore, QtGui
 
+import cl.gui.messages
 from cl.core import *
+
 from mplayer.widget import MPlayerWidget
 from subtitles.widget import SubtitlesWidget
+
+import pytee.constants as constants
 
 __all__ = [ "MainWindow" ]
 LOG = logging.getLogger("pytee.main_window")
@@ -22,7 +26,7 @@ class MainWindow(QtGui.QWidget):
     _open_signal = QtCore.Signal(str)
     """Opens a movie for playing.
 
-    It's a signal to guarantee that real open() method will be called in the
+    This signal is to guarantee that real open() method will be called in the
     main loop.
     """
 
@@ -36,6 +40,8 @@ class MainWindow(QtGui.QWidget):
     def __init__(self, parent = None):
         super(MainWindow, self).__init__(parent)
 
+        self.setWindowTitle(constants.APP_NAME)
+
         main_layout = QtGui.QBoxLayout(QtGui.QBoxLayout.TopToBottom)
         main_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(main_layout)
@@ -46,15 +52,12 @@ class MainWindow(QtGui.QWidget):
         self.__subtitles = SubtitlesWidget()
         main_layout.addWidget(self.__subtitles)
 
+        self.__player.failed.connect(self._open_failed)
         self.__player.pos_changed.connect(self.__subtitles.set_pos)
-
-        # TODO
-#        button = QtGui.QToolButton()
-#        button.clicked.connect(self.__player.open)
-#        main_layout.addWidget(button)
+        self.__player.finished.connect(self.close)
 
         self.setup_hotkeys()
-        self.resize(640, 480)
+        self.resize(800, 600)
 
         self._open_signal.connect(self._open, QtCore.Qt.QueuedConnection)
 
@@ -64,12 +67,15 @@ class MainWindow(QtGui.QWidget):
 
 
     def closeEvent(self, event):
-        """QWidget closeEvent()."""
+        """QWidget's closeEvent()."""
 
+        self.hide()
         self.__close()
 
 
     def open(self, movie_path):
+        """Opens a movie for playing."""
+
         self._open_signal.emit(movie_path)
 
 
@@ -85,18 +91,20 @@ class MainWindow(QtGui.QWidget):
                 return self.__handler(*self.__args)
 
         hotkeys = {
-            # TODO
-            "O":                     "osd_toggle",
             "Space":                 "pause",
             "Left":                  "seek-3",
             "Right":                 "seek+3",
+            "Comma":                 "seek-30",
+            "Period":                "seek+30",
+            "M":                     "seek-300",
+            "Slash":                 "seek+300",
             "Up":                    "volume+10",
             "Down":                  "volume-10",
+            "O":                     "osd_toggle",
 
+            "J":                     "next_alternative",
+            "K":                     "prev_alternative",
             "A":                     "switch_alternative",
-            # TODO
-#            "J":                     "next_alternative",
-#            "K":                     "prev_alternative",
 
             "Q":                     "quit",
             "Escape":                "quit",
@@ -104,7 +112,6 @@ class MainWindow(QtGui.QWidget):
         }
 
         actions = {
-            "switch_alternative": lambda: self.__player.switch_alternative(),
             "quit":               lambda: self.close()
         }
 
@@ -141,27 +148,60 @@ class MainWindow(QtGui.QWidget):
 
 
     def _open(self, movie_path):
-        """Does all work for opening a movie file."""
+        """Does all work that is needed to be done for opening a movie file."""
 
+        movie_path = os.path.abspath(movie_path)
         LOG.info("Opening '%s'...", movie_path)
 
-        # TODO FIXME
         try:
-            alternatives, subtitles = self.__find_related_media_files(movie_path)
+            if not os.path.exists(movie_path):
+                raise Error(self.tr("File '{0}' doesn't exist."), movie_path)
+
+            if not os.path.isfile(movie_path):
+                raise Error(self.tr("The movie path '{0}' points to non-file object."), movie_path)
+
+            alternatives = []
+            subtitles = []
+
+            try:
+                alternatives, subtitles = self.__find_related_media_files(movie_path)
+            except Exception, e:
+                LOG.error("%s", Error(self.tr("Unable to get the movie's info:")).append(e))
+
+                try:
+                    movie_dir = os.path.dirname(movie_path)
+                    file_name_prefix = os.path.splitext(os.path.basename(movie_path))[0]
+                    subtitle_extensions = [ ext[1:] for ext in pysd.pysd.SUBTITLE_EXTENSIONS ]
+
+                    for file_name in os.listdir(movie_dir):
+                        if file_name.startswith(file_name_prefix) and os.path.splitext(file_name)[1] in subtitle_extensions:
+                            subtitles.append(( os.path.join(movie_dir, file_name), "unknown" ))
+                except Exception, e:
+                    LOG.error("Unable to find the movie's subtitles. "
+                        "Error while reading the movie directory '%s': %s.", movie_dir, EE(e))
+
             LOG.debug("Found alternative movies: %s.", alternatives)
             LOG.debug("Found subtitles: %s.", subtitles)
-            self.__subtitles.load(subtitles)
 
-    #        movie_path = "/my_files/english/Lie To Me/Lie.To.Me.s03e03.rus.LostFilm.TV.avi"
-
-            self.__player.open([ movie_path ] + alternatives)
+            self.__subtitles.open(subtitles)
+            self.__player.open(movie_path, alternatives)
         except Exception, e:
-            print "ZZZZZZZZZZZZZZZZZZZZZ", e
-            LOG.exception(">>>>>>>>>>>>>>>>>> %s", e)
+            self.close()
+            cl.gui.messages.warning(self, self.tr("Unable to play the movie"), e)
+
+
+    def _open_failed(self, error):
+        """Called when the player failed to open a movie."""
+
+        cl.gui.messages.warning(self, self.tr("Unable to play the movie"), error)
+        self.close()
 
 
     def __close(self):
         """Frees all allocated resources and stops all running processes."""
+
+        self.__subtitles.close()
+        self.__player.close()
 
 
     def __find_related_media_files(self, movie_path):
