@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=pytee
+GenericName=Video player
+GenericName[ru]=Видео-плеер
+Comment=Watch your favorite TV shows on several languages simultaneously for purpose of learning foreign language
+Comment[ru]=Смотрите ваши любимые сериалы на нескольких языках одновременно с целью изучения иностранного языка
+Icon=pytee
+Exec=pytee %f
+Categories=AudioVideo;Video;Education;Player;Languages;Qt;
+MimeType=application/octet-stream;video/x-msvideo;
+Version=1.0
+
