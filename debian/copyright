@@ -1,0 +1,30 @@
+Format-Specification: http://wiki.debian.org/Proposals/CopyrightFormat
+Name: pytee
+Upstream-Author: Dmitry Konishchev <konishchev@gmail.com>
+Packaged-By: Dmitry Konishchev <konishchev@gmail.com>
+Packaged-Date: Thu, 25 Nov 2010 22:48:19 +0300
+Original-Source-Location: https://github.com/KonishchevDmitry/pytee
+
+
+Files: *
+Copyright: 2010, Dmitry Konishchev <konishchev@gmail.com>
+License: GPL-3+
+
+
+Files: ./icons/*
+Copyright: Icons has been gotten from Humanity Icons theme
+           https://launchpad.net/humanity
+License: GPL-2
+
+
+
+License: GPL-2
+
+    On Debian systems, the full text of the GNU General Public License version
+    2 can be found in the file `/usr/share/common-licenses/GPL-2'.
+
+
+License: GPL-3
+
+    On Debian systems, the full text of the GNU General Public License version
+    3 can be found in the file `/usr/share/common-licenses/GPL-3'.

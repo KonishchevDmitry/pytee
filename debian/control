@@ -1,0 +1,20 @@
+Source: pytee
+Section: graphics
+Priority: optional
+Maintainer: Dmitry Konishchev <konishchev@gmail.com>
+Build-Depends: cdbs, debhelper (>= 7)
+Standards-Version: 3.9.1
+Homepage: https://github.com/KonishchevDmitry/pytee
+
+Package: pytee
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.6)
+Description: A video player for watching movies with subtitles
+ This program is intended to make life easier for people who watches TV shows or
+ films on foreign language with subtitles for the purpose of learning this
+ language. It allows you to watch a few subtitles simultaneously, copy a part of
+ subtitle text (for example, to pass it to a dictionary) and switch to a movie
+ with alternative translation (for example, if subtitles are not so good).
+ .
+ pytee uses MPlayer as a backend.
+
