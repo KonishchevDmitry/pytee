@@ -1,0 +1,10 @@
+pytee - A video player for watching movies with subtitles
+
+This program is intended to make life easier for people who watches TV shows or
+films on foreign language with subtitles for the purpose of learning this
+language. It allows you to watch a few subtitles simultaneously, copy a part of
+subtitle text (for example, to pass it to a dictionary) and switch to a movie
+with alternative translation (for example, if subtitles are not so good).
+
+pytee uses MPlayer as a backend.
+

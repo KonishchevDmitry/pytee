@@ -1,0 +1,6 @@
+Installation
+------------
+
+Run directly from untar directory:
+$ make && sudo make install
+
