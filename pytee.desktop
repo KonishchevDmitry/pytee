@@ -8,6 +8,6 @@ Comment[ru]=Смотрите ваши любимые сериалы на нес�
 Icon=pytee
 Exec=pytee %f
 Categories=AudioVideo;Video;Education;Player;Languages;Qt;
-MimeType=application/octet-stream;video/x-msvideo;
+MimeType=application/octet-stream;video/x-msvideo;video/x-matroska
 Version=1.0
 
