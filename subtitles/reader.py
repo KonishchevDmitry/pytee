@@ -153,17 +153,16 @@ class SubtitleReader(QtCore.QObject):
                         text = text.strip()
 
                         if text:
+                            # Subtitle files sometimes have a few subtitles without text at all
                             subtitles.append({
                                 "id":         id,
                                 "start_time": start_time,
                                 "end_time":   end_time,
                                 "text":       text
                             })
-                            state = "id"
-                            repeat = True
-                        else:
-                            # Subtitle files sometimes have a few subtitles without text at all
-                            pass
+
+                        state = "id"
+                        repeat = True
                     else:
                         LOG.debug("Text: %s", line)
 
