@@ -174,7 +174,10 @@ class MainWindow(QtGui.QWidget):
                     subtitle_extensions = [ ext[1:] for ext in pysd.pysd.SUBTITLE_EXTENSIONS ]
 
                     for file_name in os.listdir(movie_dir):
-                        if file_name.startswith(file_name_prefix) and os.path.splitext(file_name)[1] in subtitle_extensions:
+                        if (
+                            file_name.lower().startswith(file_name_prefix.lower()) and
+                            os.path.splitext(file_name)[1].lower() in subtitle_extensions
+                        ):
                             subtitles.append(( os.path.join(movie_dir, file_name), "unknown" ))
                 except Exception, e:
                     LOG.error("Unable to find the movie's subtitles. "
