@@ -228,6 +228,7 @@ class SubtitleWidget(QtGui.QTextEdit):
 
         self.setReadOnly(True)
         self.document().setUndoRedoEnabled(False)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
         # Filling up the widget -->
