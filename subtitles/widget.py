@@ -51,7 +51,7 @@ class SubtitlesWidget(QtGui.QWidget):
         self.__cur_text.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
 
         font = self.__cur_text.font()
-        font.setPointSize(11)
+        font.setPointSize(12)
         self.__cur_text.setFont(font)
 
         main_layout.addWidget(self.__cur_text)
@@ -173,7 +173,7 @@ class SubtitlesWidget(QtGui.QWidget):
         return (
             ( a_lang not in ("en", "eng") ) - ( b_lang not in ("en", "eng") ) or
             cmp(a_lang, b_lang) or
-            cmp(a_path, b_path)
+            cmp(a_path.lower(), b_path.lower())
         )
 
 
@@ -221,7 +221,9 @@ class SubtitleWidget(QtGui.QTextEdit):
         self.__text_mappings = []
 
         self.__char_format_default = QtGui.QTextCharFormat()
+        self.__char_format_default.setFontPointSize(10)
         self.__char_format_active = QtGui.QTextCharFormat()
+        self.__char_format_active.setFontPointSize(10)
         self.__char_format_active.setFontWeight(QtGui.QFont.Bold)
 
         self.setReadOnly(True)
