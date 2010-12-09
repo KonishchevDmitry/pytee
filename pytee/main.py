@@ -83,8 +83,8 @@ def main():
 
         if len(cmd_args) != 1:
             raise Error(app.tr("You should pass a path to a movie as command line arguments."))
-        else:
-            movie_path = sys.argv[1]
+
+        movie_path = cmd_args[0]
     except Exception, e:
         cl.gui.messages.error(None, app.tr("Unable to start {0}").format(constants.APP_NAME),
             Error(app.tr("Command line option parsing error:")).append(e) )
