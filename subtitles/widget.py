@@ -6,7 +6,7 @@ import logging
 
 from PySide import QtCore, QtGui
 
-from cl.core import *
+from cl.core import EE
 
 import cl.gui.messages
 

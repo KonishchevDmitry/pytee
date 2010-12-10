@@ -12,7 +12,7 @@ from PySide import QtCore
 import pysd.pysd
 
 from cl import constants
-from cl.core import *
+from cl.core import Error, LogicalError
 
 __all__ = [ "read" ]
 LOG = logging.getLogger("subtitles.reader")

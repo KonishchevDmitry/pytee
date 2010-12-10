@@ -9,11 +9,13 @@ import pysd.pysd
 from PySide import QtCore, QtGui
 
 import cl.gui.messages
-from cl.core import *
+from cl.core import EE, Error
 
+import mplayer.widget
 from mplayer.widget import MPlayerWidget
 from subtitles.widget import SubtitlesWidget
 
+from pytee.config import Config
 import pytee.constants as constants
 
 __all__ = [ "MainWindow" ]
@@ -30,6 +32,9 @@ class MainWindow(QtGui.QWidget):
     main loop.
     """
 
+    __config = None
+    """The application's configuration."""
+
     __player = None
     """The player widget."""
 
@@ -45,6 +50,8 @@ class MainWindow(QtGui.QWidget):
         main_layout = QtGui.QBoxLayout(QtGui.QBoxLayout.TopToBottom)
         main_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(main_layout)
+
+        self.__config = Config()
 
         self.__player = MPlayerWidget()
         main_layout.addWidget(self.__player, 1)
@@ -63,13 +70,15 @@ class MainWindow(QtGui.QWidget):
 
 
     def __del__(self):
-        self.__close()
+        if self.__player is not None:
+            self.__close()
 
 
     def closeEvent(self, event):
         """QWidget's closeEvent()."""
 
         self.hide()
+        self.__save_config()
         self.__close()
 
 
@@ -246,4 +255,21 @@ class MainWindow(QtGui.QWidget):
                         alternatives.append(path)
 
         return alternatives, subtitles
+
+
+    def __save_config(self):
+        """Saves all configuration data."""
+
+        try:
+            player_state = self.__player.cur_state()
+
+            if player_state["state"] in (
+                mplayer.widget.PLAYER_STATE_FAILED,
+                mplayer.widget.PLAYER_STATE_FINISHED
+            ):
+                self.__config.mark_movie_as_watched(player_state["movie_path"])
+            elif player_state["state"] == mplayer.widget.PLAYER_STATE_OPENED:
+                self.__config.save_movie_last_position(player_state["movie_path"], player_state["cur_pos"])
+        except Exception, e:
+            cl.gui.messages.warning(self, self.tr("Unable to save configuration data"), e)
 

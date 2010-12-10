@@ -6,7 +6,7 @@ import logging
 
 from PySide import QtCore, QtGui
 
-from cl.core import *
+from cl.core import EE, Error
 
 import cl.gui.messages
 
@@ -38,6 +38,21 @@ PlayerControl = MovieControl
 """Wraps methods that controls a whole player."""
 
 
+PLAYER_STATE_CLOSED = "closed"
+"""No movie is opened now."""
+
+PLAYER_STATE_OPENING = "opening"
+"""Player is opening a movie."""
+
+PLAYER_STATE_FAILED = "failed"
+"""Player failed to open a movie."""
+
+PLAYER_STATE_OPENED = "opened"
+"""Player has opened a movie and playing it now."""
+
+PLAYER_STATE_FINISHED = "finished"
+"""Player has finished playing a movie."""
+
 
 class MPlayerWidget(QtGui.QWidget):
     """MPlayer Qt widget."""
@@ -56,6 +71,13 @@ class MPlayerWidget(QtGui.QWidget):
     Emitted if the main movie finished its playing and the player has closed
     due to this.
     """
+
+
+    __movie_path = None
+    """Path to the playing movie."""
+
+    __state = PLAYER_STATE_CLOSED
+    """Current state name."""
 
 
     __players = None
@@ -90,8 +112,41 @@ class MPlayerWidget(QtGui.QWidget):
     def close(self):
         """Closes all opened movies."""
 
-        for player in self.__players[:]:
-            self.__close_movie(player)
+        if self.__players is not None:
+            for player in self.__players[:]:
+                self.__close_movie(player)
+
+        self.__state = PLAYER_STATE_CLOSED
+
+
+    def cur_state(self):
+        """Returns current player state."""
+
+        state = { "state": self.__state }
+
+        if self.__state in (PLAYER_STATE_OPENING, PLAYER_STATE_FAILED, PLAYER_STATE_OPENED, PLAYER_STATE_FINISHED):
+            state["movie_path"] = self.__movie_path
+
+            if self.__state == PLAYER_STATE_OPENED:
+                player = self.__player()
+
+                if player.running():
+                    try:
+                        state["cur_pos"] = player.cur_pos()
+                    except Exception, e:
+                        if player.running():
+                            LOG.error("Unable to get current playing position for movie '%s': %s", state["movie_path"], e)
+
+                            # Not available yet
+                            state["cur_pos"] = -1
+                        else:
+                            # Assuming that we've finished playing the movie.
+                            state["cur_pos"] = 0
+                else:
+                    # Assuming that we've finished playing the movie.
+                    state["cur_pos"] = 0
+
+        return state
 
 
     def get_control_actions(self):
@@ -128,6 +183,9 @@ class MPlayerWidget(QtGui.QWidget):
         self.close()
 
         try:
+            self.__movie_path = movie_path
+            self.__state = PLAYER_STATE_OPENING
+
             self.__cur_id = 0
             self.__cur_alt_id = int(bool(len(alternatives)))
 
@@ -233,6 +291,7 @@ class MPlayerWidget(QtGui.QWidget):
 
         if self.__is_main_movie(player):
             self.close()
+            self.__state = PLAYER_STATE_FAILED
             self.failed.emit(error)
         else:
             if self.__player() is player:
@@ -250,6 +309,9 @@ class MPlayerWidget(QtGui.QWidget):
         if self.__player() is player:
             display_widget.setVisible(True)
 
+        if self.__is_main_movie(player):
+            self.__state = PLAYER_STATE_OPENED
+
 
     def _mplayer_terminated(self):
         """Called on MPlayer termination."""
@@ -261,6 +323,7 @@ class MPlayerWidget(QtGui.QWidget):
         self.__display_widget(player).setVisible(False)
 
         if self.__is_main_movie(player):
+            self.__state = PLAYER_STATE_FINISHED
             self.finished.emit()
 
 

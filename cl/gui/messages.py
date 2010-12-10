@@ -4,7 +4,7 @@
 
 from PySide import QtCore, QtGui
 
-from cl.core import *
+from cl.core import EE
 
 
 _DIALOGS = []

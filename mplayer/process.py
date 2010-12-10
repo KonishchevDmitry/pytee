@@ -13,7 +13,7 @@ import time
 
 from PySide import QtCore
 
-from cl.core import *
+from cl.core import EE, Error
 
 __all__ = [ "MPlayer" ]
 LOG = logging.getLogger("mplayer.mplayer")
@@ -195,7 +195,7 @@ class MPlayer(QtCore.QObject):
             LOG.debug("Ignoring 'failed' signal. We already have state %s.", self.__state)
             return
 
-        self.termiate()
+        self.terminate()
         self.failed.emit(error)
 
 

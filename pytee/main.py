@@ -27,7 +27,7 @@ from PySide import QtCore, QtGui
 
 import cl.log
 import cl.signals
-from cl.core import *
+from cl.core import EE, Error, LogicalError
 
 import cl.gui.messages
 
