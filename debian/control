@@ -8,7 +8,7 @@ Homepage: https://github.com/KonishchevDmitry/pytee
 
 Package: pytee
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.6)
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.6), mplayer
 Description: A video player for watching movies with subtitles
  This program is intended to make life easier for people who watches TV shows or
  films on foreign language with subtitles for the purpose of learning this
