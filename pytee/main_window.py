@@ -35,6 +35,10 @@ class MainWindow(QtGui.QWidget):
     __config = None
     """The application's configuration."""
 
+    __save_config_timer = None
+    """Timer for saving the config."""
+
+
     __player = None
     """The player widget."""
 
@@ -52,6 +56,9 @@ class MainWindow(QtGui.QWidget):
         self.setLayout(main_layout)
 
         self.__config = Config()
+        self.__save_config_timer = QtCore.QTimer(self)
+        self.__save_config_timer.timeout.connect(self._save_config)
+        self.__save_config_timer.start(self.__config.get_config_saving_interval() * 1000)
 
         self.__player = MPlayerWidget()
         main_layout.addWidget(self.__player, 1)
@@ -70,15 +77,17 @@ class MainWindow(QtGui.QWidget):
 
 
     def __del__(self):
-        if self.__player is not None:
-            self.__close()
+        if self.__save_config_timer is not None:
+            self.__save_config_timer.stop()
+
+        self.__close()
 
 
     def closeEvent(self, event):
         """QWidget's closeEvent()."""
 
         self.hide()
-        self.__save_config()
+        self._save_config()
         self.__close()
 
 
@@ -209,11 +218,33 @@ class MainWindow(QtGui.QWidget):
         self.close()
 
 
+    def _save_config(self):
+        """Saves all configuration data."""
+
+        LOG.debug("Saving configuration data...")
+
+        try:
+            player_state = self.__player.cur_state()
+
+            if player_state["state"] in (
+                mplayer.widget.PLAYER_STATE_FAILED,
+                mplayer.widget.PLAYER_STATE_FINISHED
+            ):
+                self.__config.mark_movie_as_watched(player_state["movie_path"])
+            elif player_state["state"] == mplayer.widget.PLAYER_STATE_OPENED:
+                self.__config.save_movie_last_position(player_state["movie_path"], player_state["cur_pos"])
+        except Exception, e:
+            cl.gui.messages.warning(self, self.tr("Unable to save configuration data"), e)
+
+
     def __close(self):
         """Frees all allocated resources and stops all running processes."""
 
-        self.__subtitles.close()
-        self.__player.close()
+        if self.__subtitles is not None:
+            self.__subtitles.close()
+
+        if self.__player is not None:
+            self.__player.close()
 
 
     def __find_related_media_files(self, movie_path):
@@ -255,21 +286,4 @@ class MainWindow(QtGui.QWidget):
                         alternatives.append(path)
 
         return alternatives, subtitles
-
-
-    def __save_config(self):
-        """Saves all configuration data."""
-
-        try:
-            player_state = self.__player.cur_state()
-
-            if player_state["state"] in (
-                mplayer.widget.PLAYER_STATE_FAILED,
-                mplayer.widget.PLAYER_STATE_FINISHED
-            ):
-                self.__config.mark_movie_as_watched(player_state["movie_path"])
-            elif player_state["state"] == mplayer.widget.PLAYER_STATE_OPENED:
-                self.__config.save_movie_last_position(player_state["movie_path"], player_state["cur_pos"])
-        except Exception, e:
-            cl.gui.messages.warning(self, self.tr("Unable to save configuration data"), e)
 
