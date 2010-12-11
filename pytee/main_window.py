@@ -177,8 +177,6 @@ class MainWindow(QtGui.QWidget):
             LOG.error(Error("Unable to get last watched position for {0}:", movie_path).append(e))
             last_pos = 0
         finally:
-            # Rewind a few seconds back
-            last_pos = max(0, last_pos // 1000 - 3)
             LOG.debug("Last watched position for '%s': %s.", movie_path, last_pos)
 
         try:
@@ -215,7 +213,7 @@ class MainWindow(QtGui.QWidget):
             LOG.debug("Found subtitles: %s.", subtitles)
 
             self.__subtitles.open(subtitles)
-            self.__player.open(movie_path, alternatives)
+            self.__player.open(movie_path, alternatives, last_pos)
         except Exception, e:
             self.close()
             cl.gui.messages.warning(self, self.tr("Unable to play the movie"), e)

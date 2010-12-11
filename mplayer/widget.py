@@ -177,7 +177,7 @@ class MPlayerWidget(QtGui.QWidget):
         self.__switch_to(self.__cur_alt_id)
 
 
-    def open(self, movie_path, alternatives):
+    def open(self, movie_path, alternatives, last_pos = 0):
         """Opens a movie and optional alternative movies for playing."""
 
         self.close()
@@ -185,6 +185,9 @@ class MPlayerWidget(QtGui.QWidget):
         try:
             self.__movie_path = movie_path
             self.__state = PLAYER_STATE_OPENING
+
+            # Rewind a few seconds back
+            last_pos = max(0, last_pos // 1000 - 3)
 
             self.__cur_id = 0
             self.__cur_alt_id = int(bool(len(alternatives)))
@@ -201,7 +204,8 @@ class MPlayerWidget(QtGui.QWidget):
                 display_widget.setVisible(False)
 
                 try:
-                    player.run(movie_path, display_widget.winId(), bool(movie_id))
+                    player.run(movie_path, display_widget.winId(),
+                        last_pos * (movie_id == 0), bool(movie_id))
                 except Exception, e:
                     display_widget.setParent(None)
 

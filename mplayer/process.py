@@ -286,7 +286,7 @@ class MPlayer(QtCore.QObject):
                     LOG.error("Unable to write MPlayer output to stdout: %s.", EE(e))
 
 
-    def __run(self, movie_path, window_id, paused = False):
+    def __run(self, movie_path, window_id, start_from = 0, paused = False):
         """Runs MPlayer process."""
 
         args = [
@@ -295,6 +295,8 @@ class MPlayer(QtCore.QObject):
             "-framedrop",
             "-slave", "-quiet",
             "-input", "nodefault-bindings", "-noconfig", "all",
+
+            "-ss", str(start_from),
 
             # Forcing XV driver usage to disable VDPAU which may cause
             # system hang-up.
