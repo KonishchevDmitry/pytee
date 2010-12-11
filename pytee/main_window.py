@@ -120,6 +120,8 @@ class MainWindow(QtGui.QWidget):
             "Down":                  "volume-10",
             "O":                     "osd_toggle",
 
+            "Return":                "toggle_full_screen",
+
             "J":                     "next_alternative",
             "K":                     "prev_alternative",
             "A":                     "switch_alternative",
@@ -130,6 +132,7 @@ class MainWindow(QtGui.QWidget):
         }
 
         actions = {
+            "toggle_full_screen": lambda: self.showNormal() if self.isFullScreen() else self.showFullScreen(),
             "quit":               lambda: self.close()
         }
 
@@ -214,6 +217,7 @@ class MainWindow(QtGui.QWidget):
 
             self.__subtitles.open(subtitles)
             self.__player.open(movie_path, alternatives, last_pos)
+            self.setWindowTitle("{0} - {1}".format(constants.APP_NAME, movie_path))
         except Exception, e:
             self.close()
             cl.gui.messages.warning(self, self.tr("Unable to play the movie"), e)
@@ -247,6 +251,8 @@ class MainWindow(QtGui.QWidget):
 
     def __close(self):
         """Frees all allocated resources and stops all running processes."""
+
+        self.setWindowTitle(constants.APP_NAME)
 
         if self.__subtitles is not None:
             self.__subtitles.close()
