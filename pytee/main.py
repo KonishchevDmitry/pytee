@@ -47,62 +47,70 @@ def main():
     """The application's main function."""
 
     app = QtGui.QApplication(sys.argv)
-    cl.signals.setup()
 
-    # Setting up the application icon -->
-    app_icon = QtGui.QIcon()
-
-    for size in (24, 48):
-        app_icon.addFile(os.path.join(INSTALL_DIR, "icons", "{0}x{0}".format(size), "apps", "{0}.png".format(constants.APP_UNIX_NAME)))
-    app_icon.addFile(os.path.join(INSTALL_DIR, "icons", "scalable", "apps", "{0}.svg".format(constants.APP_UNIX_NAME)))
-
-    app.setWindowIcon(app_icon)
-    # Setting up the application icon <--
-
-    debug_mode = False
-
-    # Parsing command line options -->
     try:
-        cmd_options, cmd_args = getopt.gnu_getopt(
-            sys.argv[1:], "dh", [ "debug-mode", "help" ] )
+        cl.signals.setup()
 
-        for option, value in cmd_options:
-            if option in ("-d", "--debug-mode"):
-                debug_mode = True
-            elif option in ("-h", "--help"):
-                print (
-                    """{0} [OPTIONS] MOVIE_PATH\n\n"""
-                    """Options:\n"""
-                    """ -d, --debug-mode  enable debug mode\n"""
-                    """ -h, --help        show this help"""
-                    .format(sys.argv[0])
-                )
-                sys.exit(0)
-            else:
-                raise LogicalError()
+        # Setting up the application icon -->
+        app_icon = QtGui.QIcon()
 
-        if len(cmd_args) != 1:
-            raise Error(app.tr("You should pass a path to a movie as command line arguments."))
+        for size in (24, 48):
+            app_icon.addFile(os.path.join(INSTALL_DIR, "icons", "{0}x{0}".format(size), "apps", "{0}.png".format(constants.APP_UNIX_NAME)))
+        app_icon.addFile(os.path.join(INSTALL_DIR, "icons", "scalable", "apps", "{0}.svg".format(constants.APP_UNIX_NAME)))
 
-        movie_path = cmd_args[0]
+        app.setWindowIcon(app_icon)
+        # Setting up the application icon <--
+
+        debug_mode = False
+
+        # Parsing command line options -->
+        try:
+            cmd_options, cmd_args = getopt.gnu_getopt(
+                sys.argv[1:], "dh", [ "debug-mode", "help" ] )
+
+            for option, value in cmd_options:
+                if option in ("-d", "--debug-mode"):
+                    debug_mode = True
+                elif option in ("-h", "--help"):
+                    print (
+                        """{0} [OPTIONS] MOVIE_PATH\n\n"""
+                        """Options:\n"""
+                        """ -d, --debug-mode  enable debug mode\n"""
+                        """ -h, --help        show this help"""
+                        .format(sys.argv[0])
+                    )
+                    sys.exit(0)
+                else:
+                    raise LogicalError()
+
+            if len(cmd_args) != 1:
+                raise Error(app.tr("You should pass a path to a movie as command line arguments."))
+
+            movie_path = cmd_args[0]
+        except Exception, e:
+            raise Error(app.tr("Command line option parsing error:")).append(e)
+        # Parsing command line options <--
+
+        cl.log.setup(debug_mode, filter = LogFilter())
+
+        # Starting the application -->
+        main_window = MainWindow()
+        cl.signals.connect(main_window.close)
+        if cl.signals.received():
+            sys.exit(1)
+        main_window.show()
+
+        main_window.open(movie_path)
+        # Starting the application <--
     except Exception, e:
-        cl.gui.messages.error(None, app.tr("Unable to start {0}").format(constants.APP_NAME),
-            Error(app.tr("Command line option parsing error:")).append(e) )
+        cl.gui.messages.error(None, app.tr("Unable to start {0}").format(constants.APP_NAME), e)
         sys.exit(1)
-    # Parsing command line options <--
 
-    cl.log.setup(debug_mode, filter = LogFilter())
-
-    # Starting the application -->
-    main_window = MainWindow()
-    cl.signals.connect(main_window.close)
-    if cl.signals.received():
+    try:
+        app.exec_()
+    except Exception, e:
+        cl.gui.messages.error(None, app.tr("{0} crashed").format(constants.APP_NAME), e)
         sys.exit(1)
-    main_window.show()
-
-    main_window.open(movie_path)
-    app.exec_()
-    # Starting the application <--
 
     LOG.info("Exiting...")
     sys.exit(0)

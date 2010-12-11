@@ -172,6 +172,16 @@ class MainWindow(QtGui.QWidget):
         LOG.info("Opening '%s'...", movie_path)
 
         try:
+            last_pos = self.__config.get_movie_last_pos(movie_path)
+        except Exception, e:
+            LOG.error(Error("Unable to get last watched position for {0}:", movie_path).append(e))
+            last_pos = 0
+        finally:
+            # Rewind a few seconds back
+            last_pos = max(0, last_pos // 1000 - 3)
+            LOG.debug("Last watched position for '%s': %s.", movie_path, last_pos)
+
+        try:
             if not os.path.exists(movie_path):
                 raise Error(self.tr("File '{0}' doesn't exist."), movie_path)
 
@@ -231,10 +241,10 @@ class MainWindow(QtGui.QWidget):
                 mplayer.widget.PLAYER_STATE_FINISHED
             ):
                 self.__config.mark_movie_as_watched(player_state["movie_path"])
-            elif player_state["state"] == mplayer.widget.PLAYER_STATE_OPENED:
+            elif player_state["state"] == mplayer.widget.PLAYER_STATE_OPENED and player_state["cur_pos"] > 0:
                 self.__config.save_movie_last_position(player_state["movie_path"], player_state["cur_pos"])
         except Exception, e:
-            cl.gui.messages.warning(self, self.tr("Unable to save configuration data"), e)
+            LOG.error(Error("Unable to save configuration data:").append(e))
 
 
     def __close(self):
