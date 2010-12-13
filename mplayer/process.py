@@ -297,6 +297,7 @@ class MPlayer(QtCore.QObject):
             "-input", "nodefault-bindings", "-noconfig", "all",
 
             "-ss", str(start_from),
+            "-nosub",
 
             # Forcing XV driver usage to disable VDPAU which may cause
             # system hang-up.
