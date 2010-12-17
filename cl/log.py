@@ -42,7 +42,7 @@ def setup(debug_mode = False, filter = None, max_log_name_length = 16):
     log = logging.getLogger()
     log.setLevel(logging.DEBUG if debug_mode else logging.INFO)
 
-    format = ""
+    format = u""
     if debug_mode:
         format += "%(asctime)s.%(msecs)03d (%(filename)12.12s:%(lineno)04d) [%(name){0}.{0}s]: ".format(max_log_name_length)
     format += "%(levelname)s: %(message)s"

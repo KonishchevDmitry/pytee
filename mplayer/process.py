@@ -344,7 +344,7 @@ class MPlayer(QtCore.QObject):
                     self.__process = process
                     self._started_signal.emit(movie_path)
                 else:
-                   self.__terminate(process)
+                    self.__terminate(process)
 
 
     def __terminate(self, process):
@@ -411,5 +411,9 @@ class Movie:
 
 
     def __str__(self):
-        return '{{ "path": "{0}", "aspect_ratio": {1} }}'.format(self.__path, self.__aspect_ratio)
+        return unicode(str)
+
+
+    def __unicode__(self):
+        return u'{{ "path": "{0}", "aspect_ratio": {1} }}'.format(self.__path, self.__aspect_ratio)
 

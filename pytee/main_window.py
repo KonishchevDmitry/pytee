@@ -217,7 +217,7 @@ class MainWindow(QtGui.QWidget):
 
             self.__subtitles.open(subtitles)
             self.__player.open(movie_path, alternatives, last_pos)
-            self.setWindowTitle("{0} - {1}".format(constants.APP_NAME, movie_path))
+            self.setWindowTitle(u"{0} - {1}".format(constants.APP_NAME, movie_path))
         except Exception, e:
             self.close()
             cl.gui.messages.warning(self, self.tr("Unable to play the movie"), e)

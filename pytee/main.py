@@ -8,9 +8,9 @@ import constants
 
 if sys.version_info < (2, 6):
     if __name__ == "__main__":
-        sys.exit("Error: {0} needs python >= 2.6.".format(constants.APP_NAME))
+        sys.exit(u"Error: {0} needs python >= 2.6.".format(constants.APP_NAME))
     else:
-        raise Exception("{0} needs python >= 2.6".format(constants.APP_NAME))
+        raise Exception(u"{0} needs python >= 2.6".format(constants.APP_NAME))
 
 import os
 
@@ -20,6 +20,7 @@ sys.path.insert(0, INSTALL_DIR)
 sys.path.insert(1, os.path.join(INSTALL_DIR, "pysd"))
 
 import getopt
+import locale
 import logging
 import signal
 
@@ -49,6 +50,7 @@ def main():
     app = QtGui.QApplication(sys.argv)
 
     try:
+        locale.setlocale(locale.LC_ALL, "")
         cl.signals.setup()
 
         # Setting up the application icon -->
@@ -65,20 +67,21 @@ def main():
 
         # Parsing command line options -->
         try:
-            cmd_options, cmd_args = getopt.gnu_getopt(
-                sys.argv[1:], "dh", [ "debug-mode", "help" ] )
+            argv = [ string.decode(locale.getlocale()[1]) for string in sys.argv ]
+
+            cmd_options, cmd_args = getopt.gnu_getopt(argv[1:],
+                "dh", [ "debug-mode", "help" ] )
 
             for option, value in cmd_options:
                 if option in ("-d", "--debug-mode"):
                     debug_mode = True
                 elif option in ("-h", "--help"):
-                    print (
+                    print app.tr(
                         """{0} [OPTIONS] MOVIE_PATH\n\n"""
-                        """Options:\n"""
-                        """ -d, --debug-mode  enable debug mode\n"""
-                        """ -h, --help        show this help"""
-                        .format(sys.argv[0])
-                    )
+                         """Options:\n"""
+                         """ -d, --debug-mode  enable debug mode\n"""
+                         """ -h, --help        show this help"""
+                    ).format(argv[0])
                     sys.exit(0)
                 else:
                     raise LogicalError()

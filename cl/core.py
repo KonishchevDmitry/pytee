@@ -29,7 +29,7 @@ class Error(Exception):
     """The base class for all exceptions that our code throws."""
 
     def __init__(self, error, *args):
-        Exception.__init__(self, error.format(*args) if len(args) else unicode(error))
+        Exception.__init__(self, unicode(error).format(*args) if len(args) else unicode(error))
 
 
     def append(self, error, *args):
