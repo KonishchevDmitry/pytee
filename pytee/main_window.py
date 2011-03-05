@@ -105,7 +105,7 @@ class MainWindow(QtGui.QWidget):
                 self.__handler = handler
                 self.__args = args
 
-            def __call__(self, checked):
+            def __call__(self, *args):
                 return self.__handler(*self.__args)
 
         hotkeys = {
