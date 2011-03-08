@@ -292,9 +292,9 @@ class MPlayer(QtCore.QObject):
         args = [
             "/usr/bin/mplayer",
 
-            "-nosub",
             "-framedrop",
             "-slave", "-quiet",
+            "-nosub", "-noautosub",
             "-input", "nodefault-bindings", "-noconfig", "all",
 
             "-ss", str(start_from),
