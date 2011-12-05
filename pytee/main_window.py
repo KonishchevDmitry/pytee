@@ -152,7 +152,7 @@ class MainWindow(QtGui.QWidget):
 
             if isinstance(key_name, str):
                 try:
-                    key = getattr(QtCore.Qt, "Key_" + key_name)
+                    key = QtGui.QKeySequence(getattr(QtCore.Qt, "Key_" + key_name))
                 except AttributeError:
                     raise Error(self.tr("Invalid hotkey '{0}'."), key_name)
             else:
