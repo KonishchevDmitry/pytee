@@ -51,6 +51,13 @@ def main():
 
     try:
         locale.setlocale(locale.LC_ALL, "")
+        try:
+            encoding = locale.getlocale()[1]
+        except ValueError:
+            # There are some bugs in OS X locale settings, so just force using
+            # UTF-8 encoding on errors.
+            encoding = "UTF-8"
+
         cl.signals.setup()
 
         # Setting up the application icon -->
@@ -67,7 +74,7 @@ def main():
 
         # Parsing command line options -->
         try:
-            argv = [ string.decode(locale.getlocale()[1]) for string in sys.argv ]
+            argv = [ string.decode(encoding) for string in sys.argv ]
 
             cmd_options, cmd_args = getopt.gnu_getopt(argv[1:],
                 "dh", [ "debug-mode", "help" ] )
