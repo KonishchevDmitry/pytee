@@ -4,3 +4,6 @@
 [submodule "pycl"]
 	path = pycl
 	url = git@github.com:KonishchevDmitry/pycl.git
+[submodule "mplayer/mplayer"]
+	path = mplayer/mplayer
+	url = git@github.com:KonishchevDmitry/mplayer.git
