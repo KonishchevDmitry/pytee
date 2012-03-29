@@ -1,6 +1,6 @@
 [submodule "pysd"]
 	path = pysd
 	url = git@github.com:KonishchevDmitry/pysd.git
-[submodule "cl"]
-	path = cl
+[submodule "pycl"]
+	path = pycl
 	url = git@github.com:KonishchevDmitry/pycl.git
