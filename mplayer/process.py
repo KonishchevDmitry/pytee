@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Provides a class that represents a running MPlayer process."""
 
 import errno
@@ -10,16 +8,25 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 
-from PySide import QtCore
+from PySide import QtCore, QtGui
 
-from cl.core import EE, Error
+import pycl.main
+import pycl.misc
 
-__all__ = [ "MPlayer" ]
-LOG = logging.getLogger("mplayer.mplayer")
+from pycl.core import EE, Error
+
+if pycl.main.is_osx():
+    import ctypes
+    import mmap
+    libc = ctypes.CDLL("libc.dylib", use_errno = True)
 
 
-def Only_running(func):
+LOG = logging.getLogger("mplayer.process")
+
+
+def _only_running(func):
     """Calls the method only if MPlayer is running."""
 
     def decorator(self, *args, **kwargs):
@@ -80,6 +87,16 @@ class MPlayer(QtCore.QObject):
     """Timer for updating current MPlayer status."""
 
 
+    __shm_name = None
+    """MPlayer's shared memory name."""
+
+    __shm_fd = -1
+    """MPlayer's shared memory descriptor."""
+
+    __shm_memory = None
+    """MPlayer's shared memory."""
+
+
     def __init__(self, parent = None):
         super(MPlayer, self).__init__(parent)
 
@@ -97,7 +114,7 @@ class MPlayer(QtCore.QObject):
         self.terminate()
 
 
-    @Only_running
+    @_only_running
     def cur_pos(self):
         """Returns current time position in milliseconds."""
 
@@ -105,14 +122,62 @@ class MPlayer(QtCore.QObject):
         return int(cur_pos * 1000)
 
 
-    @Only_running
+    @_only_running
     def get_movie(self):
         """Returns a movie that is playing at this moment."""
 
         return self.__movie
 
 
-    @Only_running
+    @_only_running
+    def get_movie_image(self):
+        """Returns current movie image."""
+
+        if not pycl.main.is_osx():
+            raise Error("Not supported.")
+
+        movie = self.get_movie()
+        width = movie.get_width()
+        height = movie.get_height()
+
+        try:
+            while self.__shm_fd < 0:
+                self.__shm_fd = libc.shm_open(self.__shm_name, os.O_RDONLY)
+                if self.__shm_fd < 0 and ctypes.get_errno() != errno.EINTR:
+                    (LOG.debug if ctypes.get_errno() == errno.ENOENT else LOG.error)(
+                        "Unable to open the MPlayer's shared memory buffer: %s.", os.strerror(ctypes.get_errno()))
+                    return QtGui.QImage(width, height, QtGui.QImage.Format_RGB888)
+
+            image_size = 3 * width * height
+
+            if self.__shm_memory is None:
+                memory_size = os.fstat(self.__shm_fd).st_size
+                if memory_size != image_size:
+                    raise Error("MPlayer created shared memory of invalid size (%s vs %s).", memory_size, image_size)
+
+                self.__shm_memory = mmap.mmap(self.__shm_fd, memory_size, mmap.MAP_SHARED, mmap.PROT_READ)
+
+            return QtGui.QImage(self.__shm_memory[:image_size], width, height, 3 * width, QtGui.QImage.Format_RGB888)
+# TODO: remove
+#                #image = QtGui.QPixmap().loadFromData(self.__shm_memory[0:image_size], QtGui.QImage.Format_RGB888).toImage()
+#                bmp_header_fmt = "<ccIIIIiiHHIIiiII"
+#                bmp_header_size = struct.calcsize(bmp_header_fmt)
+#                bmp_header = struct.pack(bmp_header_fmt,
+#                        "B", "M", bmp_header_size + image_size, 0, bmp_header_size,
+#                        40, movie.get_width(), -movie.get_height(), 1, 24, 0, 0, 2000, 2000, 0, 0)
+#                bmp_image = bmp_header
+#                for i in xrange(0, image_size / 3):
+#                    bmp_image += image_data[i * 3+2:i * 3 + 3]
+#                    bmp_image += image_data[i * 3+1:i * 3 + 2]
+#                    bmp_image += image_data[i * 3:i * 3 + 1]
+#                #open("out.bmp", "w").write(bmp_image)
+#                image.loadFromData(bmp_image)
+        except Exception as e:
+            LOG.error("Failed to get the movie image: %s", e)
+            return QtGui.QImage(width, height, QtGui.QImage.Format_RGB888)
+
+
+    @_only_running
     def osd_toggle(self):
         """Toggles the OSD displaying."""
 
@@ -120,33 +185,39 @@ class MPlayer(QtCore.QObject):
         self.__osd_displaying = not self.__osd_displaying
 
 
-    @Only_running
+    @_only_running
     def pause(self):
         """Pauses the movie playing."""
 
         self.__command("pause")
 
 
-    @Only_running
+    @_only_running
     def paused(self):
         """Returns True if the MPlayer is paused."""
 
         return self.__get_property("pause", force_pausing = True, suppress_debug = True) == "yes"
 
 
-    def run(self, *args):
+    def run(self, movie_path, start_from, paused, display_widget):
         """Runs MPlayer."""
 
         if self.__state != "stopped":
             raise Error(self.tr("MPlayer is already running."))
 
         self.__state = "staging"
+        if pycl.main.is_osx():
+            video_output = self.__shm_name = (
+                "mplayer-" + str(uuid.uuid4()).replace("-", "")[:16])
+        else:
+            video_output = str(display_widget.winId())
 
-        # We have run MPlayer in another thread, because it is not going to
-        # start if our main loop is locked at this moment.
+        # We have to run MPlayer in another thread, because it is not going to
+        # start if our main loop is locked at this moment (X11 only).
 
         thread = threading.Thread(name = "MPlayer thread",
-            target = self.__run, args = args)
+            target = self.__run,
+            args = (movie_path, video_output, start_from, paused))
         thread.start()
 
 
@@ -159,7 +230,7 @@ class MPlayer(QtCore.QObject):
         return self.__state == "running"
 
 
-    @Only_running
+    @_only_running
     def seek(self, seconds, absolute = False):
         """Seeks for specified number of seconds."""
 
@@ -177,11 +248,30 @@ class MPlayer(QtCore.QObject):
             self.__terminate(self.__process)
             self.__process = None
 
+        if pycl.main.is_osx():
+            if self.__shm_memory is not None:
+                try:
+                    self.__shm_memory.close()
+                except Exception as e:
+                    LOG.error("Unable to unmap the MPlayer's shared memory: %s.", EE(e))
+                finally:
+                    self.__shm_memory = None
+
+            if self.__shm_fd >= 0:
+                try:
+                    pycl.misc.syscall_wrapper(os.close, self.__shm_fd)
+                except Exception as e:
+                    LOG.error("Unable to close the MPlayer's shared memory object: %s.", EE(e))
+                finally:
+                    self.__shm_fd = -1
+
+            self.__shm_name = None
+
         if prev_state == "running":
             self.terminated.emit()
 
 
-    @Only_running
+    @_only_running
     def volume(self, value):
         """Increase/decrease volume."""
 
@@ -207,13 +297,14 @@ class MPlayer(QtCore.QObject):
             return
 
         try:
-            aspect_ratio = self.__get_property("aspect", float, force_pausing = True)
-        except Exception, e:
+            width = self.__get_property("width", int, force_pausing = True)
+            height = self.__get_property("height", int, force_pausing = True)
+        except Exception as e:
             self.terminate()
             LOG.error("%s", Error("MPlayer failed to open '{0}'.", movie_path).append(e))
             self.failed.emit(self.tr("MPlayer failed to open '{0}'.").format(movie_path))
         else:
-            self.__movie = Movie(movie_path, aspect_ratio)
+            self.__movie = Movie(movie_path, width, height)
             self.__state = "running"
             LOG.debug("We successfully started MPlayer for movie '%s'.", self.__movie)
             self.started.emit()
@@ -225,7 +316,7 @@ class MPlayer(QtCore.QObject):
         try:
             if self.running():
                 self.pos_changed.emit(self.cur_pos())
-        except Exception, e:
+        except Exception as e:
             if self.running():
                 LOG.exception("MPlayer current status update failed. %s", e)
 
@@ -238,7 +329,7 @@ class MPlayer(QtCore.QObject):
 
         try:
             self.__process.stdin.write(command + "\n")
-        except Exception, e:
+        except Exception as e:
             LOG.debug("Error while sending a command to the MPlayer: %s.", EE(e))
             self.__connection_closed()
 
@@ -262,7 +353,7 @@ class MPlayer(QtCore.QObject):
                 line = self.__process.stdout.readline()
                 if not line:
                     raise Error("unexpected end of file")
-            except Exception, e:
+            except Exception as e:
                 LOG.debug("Error while reading a command response from the MPlayer: %s.", EE(e))
                 self.__connection_closed()
 
@@ -282,37 +373,45 @@ class MPlayer(QtCore.QObject):
             else:
                 try:
                     sys.stdout.write(line)
-                except Exception, e:
+                except Exception as e:
                     LOG.error("Unable to write MPlayer output to stdout: %s.", EE(e))
 
 
-    def __run(self, movie_path, window_id, start_from = 0, paused = False):
+    def __run(self, movie_path, video_output, start_from, paused):
         """Runs MPlayer process."""
 
         args = [
-            "/usr/bin/mplayer",
+            # TODO
+            os.path.expanduser("~/mplayer/bin/mplayer") if pycl.main.is_osx() else "/usr/bin/mplayer",
 
             "-framedrop",
             "-slave", "-quiet",
             "-nosub", "-noautosub",
             "-input", "nodefault-bindings", "-noconfig", "all",
 
+                # TODO FIXME
+                "-ao", "null",
             "-ss", str(start_from),
-
-            # Forcing XV driver usage to disable VDPAU which may cause
-            # system hang-up.
-            "-vo", "xv",
-
-            # This option is needed because of some bugs in PulseAudio
-            # implementation. Lack of this option can cause problems with
-            # pausing - video will be paused but wont be able to be
-            # unpaused.
-            "-ao", "sdl",
-
-            "-wid", str(window_id),
 
             movie_path
         ]
+
+        if pycl.main.is_osx():
+            args += [ "-vo", "corevideo:shared_buffer:buffer_name=" + video_output ]
+        else:
+            args += [
+                # Forcing XV driver usage to disable VDPAU which may cause
+                # system hang-up.
+                "-vo", "xv",
+
+                # This option is needed because of some bugs in PulseAudio
+                # implementation. Lack of this option can cause problems with
+                # pausing - video will be paused but wont be able to be
+                # unpaused.
+                "-ao", "sdl",
+
+                "-wid", video_output,
+            ]
 
         LOG.debug("Running MPlayer: %s", args)
 
@@ -322,15 +421,15 @@ class MPlayer(QtCore.QObject):
         try:
             try:
                 process = subprocess.Popen(args, stdin = subprocess.PIPE, stdout = subprocess.PIPE, close_fds = True)
-            except Exception, e:
+            except Exception as e:
                 raise Error(self.tr("Unable to start MPlayer:")).append(e)
 
             if paused:
                 try:
                     process.stdin.write("pause\n")
-                except Exception, e:
+                except Exception as e:
                     raise Error(self.tr("MPlayer failed to open '{0}'."), movie_path)
-        except Exception, e:
+        except Exception as e:
             LOG.error("%s", EE(e))
 
             if process is not None:
@@ -355,12 +454,12 @@ class MPlayer(QtCore.QObject):
 
         try:
             process.stdin.close()
-        except Exception, e:
+        except Exception as e:
             LOG.error("Unable to close the MPlayer process stdin: %s.", EE(e))
 
         try:
             process.stdout.close()
-        except Exception, e:
+        except Exception as e:
             LOG.error("Unable to close the MPlayer process stdin: %s.", EE(e))
 
         try:
@@ -369,7 +468,7 @@ class MPlayer(QtCore.QObject):
             while time.time() - start_time < 1:
                 try:
                     os.kill(pid, signal.SIGTERM)
-                except EnvironmentError, e:
+                except EnvironmentError as e:
                     if e.errno == errno.ESRCH:
                         break
                     else:
@@ -381,10 +480,10 @@ class MPlayer(QtCore.QObject):
 
                 try:
                     os.kill(pid, signal.SIGKILL)
-                except EnvironmentError, e:
+                except EnvironmentError as e:
                     if e.errno != errno.ESRCH:
                         raise
-        except Exception, e:
+        except Exception as e:
             LOG.error("Unable to kill the MPlayer process %s: %s.", pid, EE(e))
 
 
@@ -392,28 +491,44 @@ class MPlayer(QtCore.QObject):
 class Movie:
     """Stores information about a movie."""
 
-    # Path to the movie.
     __path = None
+    """Path to the movie."""
 
-    # The movie aspect ratio.
-    __aspect_ratio = None
+    __width = None
+    """The movie width."""
+
+    __height = None
+    """The movie height."""
 
 
-    def __init__(self, path, aspect_ratio):
+    def __init__(self, path, width, height):
         self.__path = path
-        self.__aspect_ratio = aspect_ratio
+        self.__width = width
+        self.__height = height
 
 
     def get_aspect_ratio(self):
         """Returns the movie aspect ratio."""
 
-        return self.__aspect_ratio
+        return float(self.__width) / self.__height
+
+
+    def get_height(self):
+        """Returns the movie height."""
+
+        return self.__height
+
+
+    def get_width(self):
+        """Returns the movie width."""
+
+        return self.__width
 
 
     def __str__(self):
-        return unicode(str)
+        return self.__path
 
 
     def __unicode__(self):
-        return u'{{ "path": "{0}", "aspect_ratio": {1} }}'.format(self.__path, self.__aspect_ratio)
+        return unicode(self.__path)
 

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Provides a function for reading subtitle files."""
 
 import codecs
@@ -11,17 +9,16 @@ from PySide import QtCore
 
 import pysd.pysd
 
-from cl import constants
-from cl.core import Error, LogicalError
+from pycl import constants
+from pycl.core import Error, LogicalError
 
-__all__ = [ "read" ]
 LOG = logging.getLogger("subtitles.reader")
 
 MAX_FILE_SIZE = constants.MEGABYTE
 """Maximum size of a subtitle file."""
 
 
-class SubtitleReader(QtCore.QObject):
+class _SubtitleReader(QtCore.QObject):
     """A class which implements all logic for reading subtitle files."""
 
     __encodings = {
@@ -43,7 +40,7 @@ class SubtitleReader(QtCore.QObject):
                 raise Error(self.tr("Too big file size. May be it is not a subtitle file?"))
 
             return self.__read(path, self.__determine_encoding(path, language))
-        except Exception, e:
+        except Exception as e:
             raise Error(self.tr("Error while reading subtitle file '{0}':"), path).append(e)
 
 
@@ -182,5 +179,5 @@ class SubtitleReader(QtCore.QObject):
         return subtitles
 
 
-read = SubtitleReader().read
+read = _SubtitleReader().read
 

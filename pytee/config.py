@@ -1,19 +1,16 @@
-#!/usr/bin/env python
-
 """Provides a class for reading and writing the application's configuration."""
 
 import errno
 import logging
 import os
-import shutil
 import sqlite3
 import time
 
-from cl.core import Error
+from pycl import constants
+from pycl.core import Error
 
-from pytee import constants
+import pytee.constants
 
-__all__ = [ "Config" ]
 LOG = logging.getLogger("pytee.config")
 
 
@@ -32,13 +29,13 @@ class Config:
 
 
     def __init__(self):
-        config_dir = os.path.expanduser("~/." + constants.APP_UNIX_NAME)
+        config_dir = os.path.expanduser("~/." + pytee.constants.APP_UNIX_NAME)
         db_path = os.path.join(config_dir, "config.sqlite")
 
         try:
             try:
                 os.makedirs(config_dir)
-            except EnvironmentError, e:
+            except EnvironmentError as e:
                 if e.errno != errno.EEXIST:
                     raise
 
@@ -59,7 +56,7 @@ class Config:
 
             self.__db.execute("VACUUM")
             self.__db.commit()
-        except Exception, e:
+        except Exception as e:
             raise Error("Unable to open database '{0}'.", db_path)
 
 
@@ -67,7 +64,7 @@ class Config:
         if self.__db is not None:
             try:
                 self.__db.close()
-            except Exception, e:
+            except Exception as e:
                 LOG.error(Error("Unable to close the database:").append(e))
 
 

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Provides tools for reading subtitle files and widgets for subtitle
 displaying.

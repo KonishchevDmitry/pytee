@@ -1,15 +1,14 @@
-#!/usr/bin/env python
-
 """Provides the application's main window."""
 
 import os
 import logging
 
 import pysd.pysd
+
 from PySide import QtCore, QtGui
 
-import cl.gui.messages
-from cl.core import EE, Error
+import pycl.gui.messages
+from pycl.core import EE, Error
 
 import mplayer.widget
 from mplayer.widget import MPlayerWidget
@@ -18,7 +17,6 @@ from subtitles.widget import SubtitlesWidget
 from pytee.config import Config
 import pytee.constants as constants
 
-__all__ = [ "MainWindow" ]
 LOG = logging.getLogger("pytee.main_window")
 
 
@@ -49,38 +47,35 @@ class MainWindow(QtGui.QWidget):
     def __init__(self, parent = None):
         super(MainWindow, self).__init__(parent)
 
-        self.setWindowTitle(constants.APP_NAME)
+        try:
+            self.setWindowTitle(constants.APP_NAME)
 
-        main_layout = QtGui.QBoxLayout(QtGui.QBoxLayout.TopToBottom)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(main_layout)
+            main_layout = QtGui.QBoxLayout(QtGui.QBoxLayout.TopToBottom)
+            main_layout.setContentsMargins(0, 0, 0, 0)
+            self.setLayout(main_layout)
 
-        self.__config = Config()
-        self.__save_config_timer = QtCore.QTimer(self)
-        self.__save_config_timer.timeout.connect(self._save_config)
-        self.__save_config_timer.start(self.__config.get_config_saving_interval() * 1000)
+            self.__config = Config()
+            self.__save_config_timer = QtCore.QTimer(self)
+            self.__save_config_timer.timeout.connect(self._save_config)
+            self.__save_config_timer.start(self.__config.get_config_saving_interval() * 1000)
 
-        self.__player = MPlayerWidget()
-        main_layout.addWidget(self.__player, 1)
+            self.__player = MPlayerWidget()
+            main_layout.addWidget(self.__player, 1)
 
-        self.__subtitles = SubtitlesWidget()
-        main_layout.addWidget(self.__subtitles)
+            self.__subtitles = SubtitlesWidget()
+            main_layout.addWidget(self.__subtitles)
 
-        self.__player.failed.connect(self._open_failed)
-        self.__player.pos_changed.connect(self.__subtitles.set_pos)
-        self.__player.finished.connect(self.close)
+            self.__player.failed.connect(self._open_failed)
+            self.__player.pos_changed.connect(self.__subtitles.set_pos)
+            self.__player.finished.connect(self.close)
 
-        self.setup_hotkeys()
-        self.resize(800, 600)
+            self.setup_hotkeys()
+            self.resize(800, 600)
 
-        self._open_signal.connect(self._open, QtCore.Qt.QueuedConnection)
-
-
-    def __del__(self):
-        if self.__save_config_timer is not None:
-            self.__save_config_timer.stop()
-
-        self.__close()
+            self._open_signal.connect(self._open, QtCore.Qt.QueuedConnection)
+        except Exception as e:
+            self.__close()
+            raise e
 
 
     def closeEvent(self, event):
@@ -176,7 +171,7 @@ class MainWindow(QtGui.QWidget):
 
         try:
             last_pos = self.__config.get_movie_last_pos(movie_path)
-        except Exception, e:
+        except Exception as e:
             LOG.error(Error("Unable to get last watched position for {0}:", movie_path).append(e))
             last_pos = 0
         finally:
@@ -194,7 +189,7 @@ class MainWindow(QtGui.QWidget):
 
             try:
                 alternatives, subtitles = self.__find_related_media_files(movie_path)
-            except Exception, e:
+            except Exception as e:
                 LOG.error("%s", Error(self.tr("Unable to get the movie's info:")).append(e))
 
                 try:
@@ -208,7 +203,7 @@ class MainWindow(QtGui.QWidget):
                             os.path.splitext(file_name)[1].lower() in subtitle_extensions
                         ):
                             subtitles.append(( os.path.join(movie_dir, file_name), "unknown" ))
-                except Exception, e:
+                except Exception as e:
                     LOG.error("Unable to find the movie's subtitles. "
                         "Error while reading the movie directory '%s': %s.", movie_dir, EE(e))
 
@@ -218,15 +213,15 @@ class MainWindow(QtGui.QWidget):
             self.__subtitles.open(subtitles)
             self.__player.open(movie_path, alternatives, last_pos)
             self.setWindowTitle(u"{0} - {1}".format(constants.APP_NAME, movie_path))
-        except Exception, e:
+        except Exception as e:
             self.close()
-            cl.gui.messages.warning(self, self.tr("Unable to play the movie"), e)
+            pycl.gui.messages.warning(self, self.tr("Unable to play the movie"), e)
 
 
     def _open_failed(self, error):
         """Called when the player failed to open a movie."""
 
-        cl.gui.messages.warning(self, self.tr("Unable to play the movie"), error)
+        pycl.gui.messages.warning(self, self.tr("Unable to play the movie"), error)
         self.close()
 
 
@@ -245,7 +240,7 @@ class MainWindow(QtGui.QWidget):
                 self.__config.mark_movie_as_watched(player_state["movie_path"])
             elif player_state["state"] == mplayer.widget.PLAYER_STATE_OPENED and player_state["cur_pos"] > 0:
                 self.__config.save_movie_last_position(player_state["movie_path"], player_state["cur_pos"])
-        except Exception, e:
+        except Exception as e:
             LOG.error(Error("Unable to save configuration data:").append(e))
 
 
@@ -253,6 +248,9 @@ class MainWindow(QtGui.QWidget):
         """Frees all allocated resources and stops all running processes."""
 
         self.setWindowTitle(constants.APP_NAME)
+
+        if self.__save_config_timer is not None:
+            self.__save_config_timer.stop()
 
         if self.__subtitles is not None:
             self.__subtitles.close()

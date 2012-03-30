@@ -20,17 +20,18 @@ sys.path.insert(0, INSTALL_DIR)
 sys.path.insert(1, os.path.join(INSTALL_DIR, "pysd"))
 
 import getopt
-import locale
 import logging
 import signal
 
 from PySide import QtCore, QtGui
 
-import cl.log
-import cl.signals
-from cl.core import EE, Error, LogicalError
+import pycl.log
+import pycl.main
+import pycl.misc
+import pycl.signals
+from pycl.core import EE, Error, LogicalError
 
-import cl.gui.messages
+import pycl.gui.messages
 
 from pytee.main_window import MainWindow
 
@@ -50,15 +51,8 @@ def main():
     app = QtGui.QApplication(sys.argv)
 
     try:
-        locale.setlocale(locale.LC_ALL, "")
-        try:
-            encoding = locale.getlocale()[1]
-        except ValueError:
-            # There are some bugs in OS X locale settings, so just force using
-            # UTF-8 encoding on errors.
-            encoding = "UTF-8"
-
-        cl.signals.setup()
+        pycl.main.set_environment()
+        pycl.signals.setup()
 
         # Setting up the application icon -->
         app_icon = QtGui.QIcon()
@@ -74,7 +68,7 @@ def main():
 
         # Parsing command line options -->
         try:
-            argv = [ string.decode(encoding) for string in sys.argv ]
+            argv = [ pycl.misc.to_unicode(arg) for arg in sys.argv ]
 
             cmd_options, cmd_args = getopt.gnu_getopt(argv[1:],
                 "dh", [ "debug-mode", "help" ] )
@@ -97,29 +91,29 @@ def main():
                 raise Error(app.tr("You should pass a path to a movie as command line arguments."))
 
             movie_path = cmd_args[0]
-        except Exception, e:
+        except Exception as e:
             raise Error(app.tr("Command line option parsing error:")).append(e)
         # Parsing command line options <--
 
-        cl.log.setup(debug_mode, filter = LogFilter())
+        pycl.log.setup(debug_mode, filter = LogFilter())
 
         # Starting the application -->
         main_window = MainWindow()
-        cl.signals.connect(main_window.close)
-        if cl.signals.received():
+        pycl.signals.connect(main_window.close)
+        if pycl.signals.received():
             sys.exit(1)
         main_window.show()
 
         main_window.open(movie_path)
         # Starting the application <--
-    except Exception, e:
-        cl.gui.messages.error(None, app.tr("Unable to start {0}").format(constants.APP_NAME), e)
+    except Exception as e:
+        pycl.gui.messages.error(None, app.tr("Unable to start {0}").format(constants.APP_NAME), e)
         sys.exit(1)
 
     try:
         app.exec_()
-    except Exception, e:
-        cl.gui.messages.error(None, app.tr("{0} crashed").format(constants.APP_NAME), e)
+    except Exception as e:
+        pycl.gui.messages.error(None, app.tr("{0} crashed").format(constants.APP_NAME), e)
         sys.exit(1)
 
     LOG.info("Exiting...")

@@ -1,18 +1,15 @@
-#!/usr/bin/env python
-
 """Provides a Qt widgets for displaying movie's subtitles."""
 
 import logging
 
 from PySide import QtCore, QtGui
 
-from cl.core import EE
+from pycl.core import EE
 
-import cl.gui.messages
+import pycl.gui.messages
 
 import subtitles.reader as subtitle_reader
 
-__all__ = [ "SubtitlesWidget" ]
 LOG = logging.getLogger("subtitles.widget")
 
 
@@ -91,7 +88,7 @@ class SubtitlesWidget(QtGui.QWidget):
         for subtitle in sorted(subtitles, cmp = self.__subtitle_cmp):
             try:
                 subtitle_data = subtitle_reader.read(*subtitle)
-            except Exception, e:
+            except Exception as e:
                 errors.append(EE(e))
             else:
                 self.__subtitles.append({
@@ -101,7 +98,7 @@ class SubtitlesWidget(QtGui.QWidget):
                 })
 
         if errors:
-            cl.gui.messages.warning(self,
+            pycl.gui.messages.warning(self,
                 self.tr("Unable to open subtitles"), "\n".join(errors), block = False )
         # Reading the subtitle files <--
 
