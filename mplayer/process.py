@@ -153,7 +153,7 @@ class MPlayer(QtCore.QObject):
             if self.__shm_memory is None:
                 memory_size = os.fstat(self.__shm_fd).st_size
                 if memory_size != image_size:
-                    raise Error("MPlayer created shared memory of invalid size (%s vs %s).", memory_size, image_size)
+                    raise Error("MPlayer created shared memory of invalid size ({0} vs {1}).", memory_size, image_size)
 
                 self.__shm_memory = mmap.mmap(self.__shm_fd, memory_size, mmap.MAP_SHARED, mmap.PROT_READ)
 
