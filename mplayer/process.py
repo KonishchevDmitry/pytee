@@ -90,9 +90,6 @@ class MPlayer(QtCore.QObject):
     __shm_name = None
     """MPlayer's shared memory name."""
 
-    __shm_fd = -1
-    """MPlayer's shared memory descriptor."""
-
     __shm_memory = None
     """MPlayer's shared memory."""
 
@@ -141,39 +138,60 @@ class MPlayer(QtCore.QObject):
         height = movie.get_height()
 
         try:
-            while self.__shm_fd < 0:
-                self.__shm_fd = libc.shm_open(self.__shm_name, os.O_RDONLY)
-                if self.__shm_fd < 0 and ctypes.get_errno() != errno.EINTR:
-                    (LOG.debug if ctypes.get_errno() == errno.ENOENT else LOG.error)(
-                        "Unable to open the MPlayer's shared memory buffer: %s.", os.strerror(ctypes.get_errno()))
-                    return QtGui.QImage(width, height, QtGui.QImage.Format_RGB888)
+            while True:
+                fd = libc.shm_open(self.__shm_name, os.O_RDONLY)
 
-            image_size = 3 * width * height
+                if fd < 0:
+                    if ctypes.get_errno() != errno.EINTR:
+                        (LOG.debug if ctypes.get_errno() == errno.ENOENT else LOG.error)(
+                            "Unable to open the MPlayer's shared memory buffer: %s.", os.strerror(ctypes.get_errno()))
+                        return QtGui.QImage(width, height, QtGui.QImage.Format_RGB888)
+                else:
+                    break
 
-            if self.__shm_memory is None:
-                memory_size = os.fstat(self.__shm_fd).st_size
-                if memory_size != image_size:
-                    raise Error("MPlayer created shared memory of invalid size ({0} vs {1}).", memory_size, image_size)
+            try:
+                image_size = 3 * width * height
 
-                self.__shm_memory = mmap.mmap(self.__shm_fd, memory_size, mmap.MAP_SHARED, mmap.PROT_READ)
+                if self.__shm_memory is None:
+                    # TODO FIXME
+                    memory_size = os.fstat(fd).st_size
+                    memory_size = image_size
+                    #if memory_size != image_size:
+                    #    raise Error("MPlayer created shared memory of invalid size ({0} vs {1}).", memory_size, image_size)
 
-            return QtGui.QImage(self.__shm_memory[:image_size], width, height, 3 * width, QtGui.QImage.Format_RGB888)
+                    self.__shm_memory = mmap.mmap(fd, memory_size, mmap.MAP_SHARED, mmap.PROT_READ)
+            finally:
+                try:
+                    pycl.misc.syscall_wrapper(os.close, fd)
+                except Exception as e:
+                    LOG.error("Unable to close the MPlayer's shared memory object: %s.", EE(e))
+
+# TODO FIXME
+            #image_data = buffer(self.__shm_memory[:image_size], 0, image_size)
+            #image_data = buffer(, 0, image_size)
+            return QtGui.QImage(self.__shm_memory, width, height, 3 * width, QtGui.QImage.Format_RGB888)
+
 # TODO: remove
-#                #image = QtGui.QPixmap().loadFromData(self.__shm_memory[0:image_size], QtGui.QImage.Format_RGB888).toImage()
-#                bmp_header_fmt = "<ccIIIIiiHHIIiiII"
-#                bmp_header_size = struct.calcsize(bmp_header_fmt)
-#                bmp_header = struct.pack(bmp_header_fmt,
-#                        "B", "M", bmp_header_size + image_size, 0, bmp_header_size,
-#                        40, movie.get_width(), -movie.get_height(), 1, 24, 0, 0, 2000, 2000, 0, 0)
-#                bmp_image = bmp_header
-#                for i in xrange(0, image_size / 3):
-#                    bmp_image += image_data[i * 3+2:i * 3 + 3]
-#                    bmp_image += image_data[i * 3+1:i * 3 + 2]
-#                    bmp_image += image_data[i * 3:i * 3 + 1]
-#                #open("out.bmp", "w").write(bmp_image)
-#                image.loadFromData(bmp_image)
+#            import struct
+#            image_data = self.__shm_memory[:image_size]
+#            bmp_header_fmt = "<ccIIIIiiHHIIiiII"
+#            bmp_header_size = struct.calcsize(bmp_header_fmt)
+#            bmp_header = struct.pack(bmp_header_fmt,
+#                    "B", "M", bmp_header_size + image_size, 0, bmp_header_size,
+#                    40, movie.get_width(), -movie.get_height(), 1, 24, 0, 0, 2000, 2000, 0, 0)
+#            bmp_image = bmp_header
+#            for i in xrange(0, image_size / 3):
+#                bmp_image += image_data[i * 3+2:i * 3 + 3]
+#                bmp_image += image_data[i * 3+1:i * 3 + 2]
+#                bmp_image += image_data[i * 3:i * 3 + 1]
+#            #open("out.bmp", "w").write(bmp_image)
+#            image = QtGui.QImage(width, height, QtGui.QImage.Format_RGB888)
+#            image.loadFromData(bmp_image)
+#            return image
         except Exception as e:
-            LOG.error("Failed to get the movie image: %s", e)
+            # TODO FIXME
+            #LOG.error("Failed to get the movie image: %s", e)
+            LOG.exception("Failed to get the movie image: %s", e)
             return QtGui.QImage(width, height, QtGui.QImage.Format_RGB888)
 
 
@@ -256,14 +274,6 @@ class MPlayer(QtCore.QObject):
                     LOG.error("Unable to unmap the MPlayer's shared memory: %s.", EE(e))
                 finally:
                     self.__shm_memory = None
-
-            if self.__shm_fd >= 0:
-                try:
-                    pycl.misc.syscall_wrapper(os.close, self.__shm_fd)
-                except Exception as e:
-                    LOG.error("Unable to close the MPlayer's shared memory object: %s.", EE(e))
-                finally:
-                    self.__shm_fd = -1
 
             self.__shm_name = None
 
@@ -382,7 +392,7 @@ class MPlayer(QtCore.QObject):
 
         args = [
             # TODO
-            os.path.expanduser("~/mplayer/bin/mplayer") if pycl.main.is_osx() else "/usr/bin/mplayer",
+            os.path.expanduser("~/pytee/libexec/pytee/mplayer") if pycl.main.is_osx() else "/usr/bin/mplayer",
 
             "-framedrop",
             "-slave", "-quiet",
@@ -397,7 +407,7 @@ class MPlayer(QtCore.QObject):
         ]
 
         if pycl.main.is_osx():
-            args += [ "-vo", "corevideo:shared_buffer:buffer_name=" + video_output ]
+            args += [ "-vo", "corevideo:shared_buffer:rgb_only:buffer_name=" + video_output ]
         else:
             args += [
                 # Forcing XV driver usage to disable VDPAU which may cause
