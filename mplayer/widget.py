@@ -188,7 +188,7 @@ class MPlayerWidget(QtGui.QWidget):
         self.__switch_to(self.__cur_alt_id)
 
 
-    def open(self, movie_path, alternatives, last_pos = 0):
+    def open(self, mplayer_path, movie_path, alternatives, last_pos = 0):
         """Opens a movie and optional alternative movies for playing."""
 
         self.close()
@@ -204,7 +204,7 @@ class MPlayerWidget(QtGui.QWidget):
             self.__cur_alt_id = int(bool(len(alternatives)))
 
             for movie_id, movie_path in enumerate([ movie_path ] + alternatives):
-                player = MPlayer()
+                player = MPlayer(mplayer_path)
 
                 player.failed.connect(self._mplayer_failed)
                 player.started.connect(self._mplayer_started)

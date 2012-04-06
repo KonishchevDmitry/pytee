@@ -14,7 +14,6 @@ import mplayer.widget
 from mplayer.widget import MPlayerWidget
 from subtitles.widget import SubtitlesWidget
 
-from pytee.config import Config
 import pytee.constants as constants
 
 LOG = logging.getLogger("pytee.main_window")
@@ -44,7 +43,7 @@ class MainWindow(QtGui.QWidget):
     """The subtitles displaying widget."""
 
 
-    def __init__(self, parent = None):
+    def __init__(self, config, parent = None):
         super(MainWindow, self).__init__(parent)
 
         try:
@@ -54,7 +53,7 @@ class MainWindow(QtGui.QWidget):
             main_layout.setContentsMargins(0, 0, 0, 0)
             self.setLayout(main_layout)
 
-            self.__config = Config()
+            self.__config = config
             self.__save_config_timer = QtCore.QTimer(self)
             self.__save_config_timer.timeout.connect(self._save_config)
             self.__save_config_timer.start(self.__config.get_config_saving_interval() * 1000)
@@ -211,7 +210,8 @@ class MainWindow(QtGui.QWidget):
             LOG.debug("Found subtitles: %s.", subtitles)
 
             self.__subtitles.open(subtitles)
-            self.__player.open(movie_path, alternatives, last_pos)
+            self.__player.open(self.__config.get_mplayer_path(),
+                movie_path, alternatives, last_pos)
             self.setWindowTitle(u"{0} - {1}".format(constants.APP_NAME, movie_path))
         except Exception as e:
             self.close()

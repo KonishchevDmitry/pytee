@@ -74,6 +74,9 @@ class MPlayer(QtCore.QObject):
     """Lock for __state changing."""
 
 
+    __binary_path = None
+    """Path to MPlayer's binary."""
+
     __process = None
     """The MPlayer process."""
 
@@ -94,10 +97,11 @@ class MPlayer(QtCore.QObject):
     """MPlayer's shared memory."""
 
 
-    def __init__(self, parent = None):
+    def __init__(self, binary_path, parent = None):
         super(MPlayer, self).__init__(parent)
 
         self.__lock = threading.Lock()
+        self.__binary_path = binary_path
 
         self._started_signal.connect(self._started)
         self._failed_signal.connect(self._failed)
@@ -130,68 +134,66 @@ class MPlayer(QtCore.QObject):
     def get_movie_image(self):
         """Returns current movie image."""
 
-        if not pycl.main.is_osx():
-            raise Error("Not supported.")
-
-        movie = self.get_movie()
-        width = movie.get_width()
-        height = movie.get_height()
-
         try:
-            while True:
-                fd = libc.shm_open(self.__shm_name, os.O_RDONLY)
+            if not pycl.main.is_osx():
+                raise Error("Not supported.")
 
-                if fd < 0:
-                    if ctypes.get_errno() != errno.EINTR:
+            movie = self.get_movie()
+            width = movie.get_width()
+            height = movie.get_height()
+
+            if self.__shm_memory is None:
+                fd = -1
+
+                while fd < 0:
+                    fd = libc.shm_open(self.__shm_name, os.O_RDONLY)
+
+                    if fd < 0 and ctypes.get_errno() != errno.EINTR:
                         (LOG.debug if ctypes.get_errno() == errno.ENOENT else LOG.error)(
                             "Unable to open the MPlayer's shared memory buffer: %s.", os.strerror(ctypes.get_errno()))
                         return QtGui.QImage(width, height, QtGui.QImage.Format_RGB888)
-                else:
-                    break
 
-            try:
-                image_size = 3 * width * height
-
-                if self.__shm_memory is None:
-                    # TODO FIXME
-                    memory_size = os.fstat(fd).st_size
-                    memory_size = image_size
-                    #if memory_size != image_size:
-                    #    raise Error("MPlayer created shared memory of invalid size ({0} vs {1}).", memory_size, image_size)
-
-                    self.__shm_memory = mmap.mmap(fd, memory_size, mmap.MAP_SHARED, mmap.PROT_READ)
-            finally:
                 try:
-                    pycl.misc.syscall_wrapper(os.close, fd)
-                except Exception as e:
-                    LOG.error("Unable to close the MPlayer's shared memory object: %s.", EE(e))
+                    image_size = 3 * width * height
+                    memory_size = os.fstat(fd).st_size
 
-# TODO FIXME
-            #image_data = buffer(self.__shm_memory[:image_size], 0, image_size)
-            #image_data = buffer(, 0, image_size)
+                    if memory_size < image_size:
+                        # But it can be bigger due to the rounding to the page size
+                        raise Error("MPlayer created shared memory of invalid size ({0} vs {1}).", memory_size, image_size)
+
+                    self.__shm_memory = mmap.mmap(fd, image_size, mmap.MAP_SHARED, mmap.PROT_READ)
+                finally:
+                    try:
+                        pycl.misc.syscall_wrapper(os.close, fd)
+                    except Exception as e:
+                        LOG.error("Unable to close the MPlayer's shared memory object: %s.", EE(e))
+
             return QtGui.QImage(self.__shm_memory, width, height, 3 * width, QtGui.QImage.Format_RGB888)
 
-# TODO: remove
-#            import struct
-#            image_data = self.__shm_memory[:image_size]
-#            bmp_header_fmt = "<ccIIIIiiHHIIiiII"
-#            bmp_header_size = struct.calcsize(bmp_header_fmt)
-#            bmp_header = struct.pack(bmp_header_fmt,
-#                    "B", "M", bmp_header_size + image_size, 0, bmp_header_size,
-#                    40, movie.get_width(), -movie.get_height(), 1, 24, 0, 0, 2000, 2000, 0, 0)
-#            bmp_image = bmp_header
-#            for i in xrange(0, image_size / 3):
-#                bmp_image += image_data[i * 3+2:i * 3 + 3]
-#                bmp_image += image_data[i * 3+1:i * 3 + 2]
-#                bmp_image += image_data[i * 3:i * 3 + 1]
-#            #open("out.bmp", "w").write(bmp_image)
-#            image = QtGui.QImage(width, height, QtGui.QImage.Format_RGB888)
-#            image.loadFromData(bmp_image)
-#            return image
+            # For testing purposes (very slow):
+            # -->
+            #import struct
+
+            #image_data = self.__shm_memory[:image_size]
+
+            #bmp_header_fmt = "<ccIIIIiiHHIIiiII"
+            #bmp_header_size = struct.calcsize(bmp_header_fmt)
+            #bmp_header = struct.pack(bmp_header_fmt,
+            #        "B", "M", bmp_header_size + image_size, 0, bmp_header_size,
+            #        40, movie.get_width(), -movie.get_height(), 1, 24, 0, 0, 2000, 2000, 0, 0)
+
+            #bmp_image = bmp_header
+            #for i in xrange(0, image_size / 3):
+            #    bmp_image += image_data[i * 3 + 2 : i * 3 + 3]
+            #    bmp_image += image_data[i * 3 + 1 : i * 3 + 2]
+            #    bmp_image += image_data[i * 3 : i * 3 + 1]
+
+            #image = QtGui.QImage(width, height, QtGui.QImage.Format_RGB888)
+            #image.loadFromData(bmp_image)
+            #return image
+            # <--
         except Exception as e:
-            # TODO FIXME
-            #LOG.error("Failed to get the movie image: %s", e)
-            LOG.exception("Failed to get the movie image: %s", e)
+            LOG.error("Failed to get the movie image: %s", e)
             return QtGui.QImage(width, height, QtGui.QImage.Format_RGB888)
 
 
@@ -266,16 +268,15 @@ class MPlayer(QtCore.QObject):
             self.__terminate(self.__process)
             self.__process = None
 
-        if pycl.main.is_osx():
-            if self.__shm_memory is not None:
-                try:
-                    self.__shm_memory.close()
-                except Exception as e:
-                    LOG.error("Unable to unmap the MPlayer's shared memory: %s.", EE(e))
-                finally:
-                    self.__shm_memory = None
+        if self.__shm_memory is not None:
+            try:
+                self.__shm_memory.close()
+            except Exception as e:
+                LOG.error("Unable to unmap the MPlayer's shared memory: %s.", EE(e))
+            finally:
+                self.__shm_memory = None
 
-            self.__shm_name = None
+        self.__shm_name = None
 
         if prev_state == "running":
             self.terminated.emit()
@@ -391,9 +392,7 @@ class MPlayer(QtCore.QObject):
         """Runs MPlayer process."""
 
         args = [
-            # TODO
-            os.path.expanduser("~/pytee/libexec/pytee/mplayer") if pycl.main.is_osx() else "/usr/bin/mplayer",
-
+            self.__binary_path,
             "-framedrop",
             "-slave", "-quiet",
             "-nosub", "-noautosub",

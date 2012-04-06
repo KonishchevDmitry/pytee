@@ -20,6 +20,9 @@ class Config:
     __db = None
     """Database for storing the configuration data."""
 
+    __mplayer_path = None
+    """Path to MPlayer's binary."""
+
 
     __config_saving_interval = constants.MINUTE_SECONDS
     """Interval with which we should save the configuration data."""
@@ -28,9 +31,15 @@ class Config:
     """Time after which we forget a movie's last position."""
 
 
-    def __init__(self):
+    def __init__(self, data_dir, debug_mode):
         config_dir = os.path.expanduser("~/." + pytee.constants.APP_UNIX_NAME)
         db_path = os.path.join(config_dir, "config.sqlite")
+
+        if debug_mode:
+            self.__mplayer_path = os.path.join(data_dir, "mplayer", "mplayer", "mplayer")
+        else:
+            self.__mplayer_path = os.path.join(
+                os.path.dirname(os.path.dirname(data_dir)), "libexec", pytee.constants.APP_UNIX_NAME, "mplayer")
 
         try:
             try:
@@ -99,6 +108,12 @@ class Config:
             movie = (0,)
 
         return movie[0]
+
+
+    def get_mplayer_path(self):
+        """Returns path to MPlayer's binary."""
+
+        return self.__mplayer_path
 
 
     def mark_movie_as_watched(self, movie_path):

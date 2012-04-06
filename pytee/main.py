@@ -15,9 +15,9 @@ if sys.version_info < (2, 6):
 import os
 
 # Setting up the module paths.
-INSTALL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, INSTALL_DIR)
-sys.path.insert(1, os.path.join(INSTALL_DIR, "pysd"))
+DATA_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, DATA_DIR)
+sys.path.insert(1, os.path.join(DATA_DIR, "pysd"))
 
 import getopt
 import logging
@@ -33,6 +33,7 @@ from pycl.core import EE, Error, LogicalError
 
 import pycl.gui.messages
 
+from pytee.config import Config
 from pytee.main_window import MainWindow
 
 LOG = logging.getLogger("pytee.main")
@@ -58,8 +59,8 @@ def main():
         app_icon = QtGui.QIcon()
 
         for size in (24, 48):
-            app_icon.addFile(os.path.join(INSTALL_DIR, "icons", "{0}x{0}".format(size), "apps", "{0}.png".format(constants.APP_UNIX_NAME)))
-        app_icon.addFile(os.path.join(INSTALL_DIR, "icons", "scalable", "apps", "{0}.svg".format(constants.APP_UNIX_NAME)))
+            app_icon.addFile(os.path.join(DATA_DIR, "icons", "{0}x{0}".format(size), "apps", "{0}.png".format(constants.APP_UNIX_NAME)))
+        app_icon.addFile(os.path.join(DATA_DIR, "icons", "scalable", "apps", "{0}.svg".format(constants.APP_UNIX_NAME)))
 
         app.setWindowIcon(app_icon)
         # Setting up the application icon <--
@@ -98,7 +99,7 @@ def main():
         pycl.log.setup(debug_mode, filter = LogFilter())
 
         # Starting the application -->
-        main_window = MainWindow()
+        main_window = MainWindow(Config(DATA_DIR, debug_mode))
         pycl.signals.connect(main_window.close)
         if pycl.signals.received():
             sys.exit(1)
