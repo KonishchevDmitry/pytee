@@ -69,8 +69,13 @@ uninstall:
 	set -e; for file in mplayer/*.py $$(find pycl pysd pytee subtitles -name '*.py'; find icons -name '*.png' -o -name '*.svg'); do \
 		rm -f $(DESTDIR)$(datadir)/$$file; \
 	done
-	set -e; for dir in "$(DESTDIR)$(datadir)" "$(DESTDIR)$(mplayer_dir)"; do \
-		[ ! -d "$$dir" ] || rmdir -p "$$dir"; \
+	set -e; for dir in $(DESTDIR)$(datadir) $(DESTDIR)$(mplayer_dir); do \
+		while true; do \
+			[ -d "$$dir" ] || break; \
+			dirs="$$(find $$dir -type d -empty)"; \
+			[ -n "$$dirs" ] || break; \
+			rmdir $$dirs; \
+		done; \
 	done
 	rm -f $(DESTDIR)$(bindir)/$(program_unix_name)
 
