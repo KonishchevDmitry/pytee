@@ -263,6 +263,7 @@ class MPlayerWidget(QtGui.QWidget):
 
         self.__player().pause()
 
+
     if pycl.main.is_osx():
         def paintEvent(self, event):
             """Qt's paintEvent handler."""
