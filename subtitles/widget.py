@@ -7,6 +7,7 @@ from PySide import QtCore, QtGui
 from pycl.core import EE
 
 import pycl.gui.messages
+import pycl.main
 
 import subtitles.reader as subtitle_reader
 
@@ -48,7 +49,7 @@ class SubtitlesWidget(QtGui.QWidget):
         self.__cur_text.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
 
         font = self.__cur_text.font()
-        font.setPointSize(12)
+        font.setPointSize(16 if pycl.main.is_osx() else 12)
         self.__cur_text.setFont(font)
 
         main_layout.addWidget(self.__cur_text)
@@ -218,9 +219,9 @@ class SubtitleWidget(QtGui.QTextEdit):
         self.__text_mappings = []
 
         self.__char_format_default = QtGui.QTextCharFormat()
-        self.__char_format_default.setFontPointSize(10)
+        self.__char_format_default.setFontPointSize(14 if pycl.main.is_osx() else 10)
         self.__char_format_active = QtGui.QTextCharFormat()
-        self.__char_format_active.setFontPointSize(10)
+        self.__char_format_active.setFontPointSize(14 if pycl.main.is_osx() else 10)
         self.__char_format_active.setFontWeight(QtGui.QFont.Bold)
 
         self.setReadOnly(True)
