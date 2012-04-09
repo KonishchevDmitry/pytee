@@ -66,8 +66,11 @@ install-mplayer: mplayer
 
 
 uninstall:
-	set -e; for file in mplayer/*.py $$(find pycl pysd pytee subtitles -name '*.py'; find icons -name '*.png' -o -name '*.svg'); do \
+	set -e; for file in $$(find icons -name '*.png' -o -name '*.svg'); do \
 		rm -f $(DESTDIR)$(datadir)/$$file; \
+	done
+	set -e; for file in mplayer/*.py $$(find pycl pysd pytee subtitles -name '*.py'); do \
+		rm -f $(DESTDIR)$(datadir)/$${file}{,c}; \
 	done
 	set -e; for dir in $(DESTDIR)$(datadir) $(DESTDIR)$(mplayer_dir); do \
 		while true; do \
