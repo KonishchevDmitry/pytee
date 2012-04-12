@@ -6,6 +6,8 @@ import os
 import sqlite3
 import time
 
+import pycl.main
+
 from pycl import constants
 from pycl.core import Error
 
@@ -35,11 +37,14 @@ class Config:
         config_dir = os.path.expanduser("~/." + pytee.constants.APP_UNIX_NAME)
         db_path = os.path.join(config_dir, "config.sqlite")
 
-        if debug_mode:
-            self.__mplayer_path = os.path.join(data_dir, "mplayer", "mplayer", "mplayer")
+        if pycl.main.is_osx():
+            if debug_mode:
+                self.__mplayer_path = os.path.join(data_dir, "mplayer", "mplayer", "mplayer")
+            else:
+                self.__mplayer_path = os.path.join(
+                    os.path.dirname(os.path.dirname(data_dir)), "libexec", pytee.constants.APP_UNIX_NAME, "mplayer")
         else:
-            self.__mplayer_path = os.path.join(
-                os.path.dirname(os.path.dirname(data_dir)), "libexec", pytee.constants.APP_UNIX_NAME, "mplayer")
+            self.__mplayer_path = "mplayer"
 
         try:
             try:
