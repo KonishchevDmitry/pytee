@@ -47,7 +47,7 @@ install: build
 		install -m 0644 $$file $(DESTDIR)$(datadir)/$$file; \
 	done
 	install -d $(DESTDIR)$(bindir)
-	/bin/echo -e '#!/bin/sh\nexec $(datadir)/$(program_unix_name)/main.py "$$@"' > $(DESTDIR)$(bindir)/$(program_unix_name)
+	{ echo '#!/bin/sh'; echo 'exec $(datadir)/$(program_unix_name)/main.py "$$@"'; } > $(DESTDIR)$(bindir)/$(program_unix_name)
 	chmod a+x $(DESTDIR)$(datadir)/$(program_unix_name)/main.py
 	chmod a+x $(DESTDIR)$(bindir)/$(program_unix_name)
 
