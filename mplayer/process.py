@@ -397,9 +397,6 @@ class MPlayer(QtCore.QObject):
             "-slave", "-quiet",
             "-nosub", "-noautosub",
             "-input", "nodefault-bindings", "-noconfig", "all",
-
-                # TODO FIXME
-                "-ao", "null",
             "-ss", str(start_from),
 
             movie_path
