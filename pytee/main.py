@@ -52,6 +52,11 @@ def main():
     app = QtGui.QApplication(sys.argv)
 
     try:
+        # Mac OS X doesn't pass path to files via command line arguments.
+        # Emulate this behavior for the sake of the script simplicity.
+        if pycl.main.is_osx():
+            import argv_emulation
+
         pycl.main.set_environment()
         pycl.signals.setup()
 

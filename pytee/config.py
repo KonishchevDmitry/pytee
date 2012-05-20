@@ -42,7 +42,7 @@ class Config:
                 self.__mplayer_path = os.path.join(data_dir, "mplayer", "mplayer", "mplayer")
             else:
                 self.__mplayer_path = os.path.join(
-                    os.path.dirname(os.path.dirname(data_dir)), "libexec", pytee.constants.APP_UNIX_NAME, "mplayer")
+                    os.path.dirname(data_dir), "MacOS", "mplayer")
         else:
             self.__mplayer_path = "mplayer"
 
