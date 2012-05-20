@@ -269,12 +269,13 @@ class MPlayerWidget(QtGui.QWidget):
             """Qt's paintEvent handler."""
 
             if self.opened() and self.__player().running():
-                dimensions = self.__get_display_dimensions(
+                x, y, width, height = self.__get_display_dimensions(
                     self.__player().get_movie().get_aspect_ratio())
 
                 painter = QtGui.QPainter(self)
-                painter.drawImage(QtCore.QRectF(*dimensions),
-                    self.__player().get_movie_image())
+                painter.drawImage(QtCore.QRectF(x, y, width, height),
+                    self.__player().get_movie_image().scaled(
+                        width, height, QtCore.Qt.IgnoreAspectRatio, QtCore.Qt.SmoothTransformation))
             else:
                 super(MPlayerWidget, self).paintEvent(event)
 
