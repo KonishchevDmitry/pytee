@@ -1,4 +1,5 @@
 /.vim
 /cscope.files
 /tags
+.DS_Store
 *.pyc
