@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>pytee</string>
+
+    <key>CFBundleVersion</key>
+    <string>1</string>
+
+    <key>CFBundleShortVersionString</key>
+    <string>0.1</string>
+
+    <key>CFBundleDisplayName</key>
+    <string>pytee</string>
+
+    <key>CFBundleIdentifier</key>
+    <string>com.blogspot.konishchevdmitry.pytee</string>
+
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2010-2012, Dmitry Konishchev</string>
+
+
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+
+    <key>CFBundleSignature</key>
+    <string>pyte</string>
+
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.video</string>
+
+
+    <key>CFBundleExecutable</key>
+    <string>pytee</string>
+
+    <key>CFBundleIconFile</key>
+    <string>pytee.icns</string>
+
+
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeExtensions</key>
+            <array/>
+
+            <key>CFBundleTypeIconFile</key>
+            <string>pytee</string>
+
+            <key>CFBundleTypeName</key>
+            <string>Video Media</string>
+
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+
+            <key>LSHandlerRank</key>
+            <string>Alternate</string>
+
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>com.apple.quicktime-movie</string>
+                <string>com.apple.quartz-composer-composition</string>
+                <string>com.blogspot.konishchevdmitry.pytee-divx</string>
+                <string>com.blogspot.konishchevdmitry.pytee-dv</string>
+                <string>com.blogspot.konishchevdmitry.pytee-flash-video</string>
+                <string>com.blogspot.konishchevdmitry.pytee-m4v</string>
+                <string>com.blogspot.konishchevdmitry.pytee-matroska-video</string>
+                <string>com.blogspot.konishchevdmitry.pytee-mxf</string>
+                <string>com.blogspot.konishchevdmitry.pytee-mts</string>
+                <string>com.blogspot.konishchevdmitry.pytee-ogg-video</string>
+                <string>com.blogspot.konishchevdmitry.pytee-rmvb</string>
+                <string>com.blogspot.konishchevdmitry.pytee-video-object</string>
+                <string>com.blogspot.konishchevdmitry.pytee-xvid</string>
+                <string>com.microsoft.advanced-systems-format</string>
+                <string>com.microsoft.windows-media-wm</string>
+                <string>com.microsoft.windows-media-wmv</string>
+                <string>com.microsoft.windows-media-wmp</string>
+                <string>com.real.realmedia</string>
+                <string>public.3gpp2</string>
+                <string>public.3gpp</string>
+                <string>public.avi</string>
+                <string>public.dv-movie</string>
+                <string>public.movie</string>
+                <string>public.mpeg-4</string>
+                <string>public.mpeg</string>
+            </array>
+
+            <key>LSTypeIsPackage</key>
+            <false/>
+        </dict>
+    </array>
+
+
+    <key>UTImportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.movie</string>
+            </array>
+
+            <key>UTTypeDescription</key>
+            <string>DIVX Video</string>
+
+            <key>UTTypeIconFile</key>
+            <string>pytee</string>
+
+            <key>UTTypeIdentifier</key>
+            <string>com.blogspot.konishchevdmitry.pytee-divx</string>
+
+            <key>UTTypeReferenceURL</key>
+            <string>http://www.divx.com</string>
+
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>divx</string>
+                </array>
+            </dict>
+        </dict>
+        <dict>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.movie</string>
+            </array>
+
+            <key>UTTypeDescription</key>
+            <string>DV Video</string>
+
+            <key>UTTypeIconFile</key>
+            <string>pytee</string>
+
+            <key>UTTypeIdentifier</key>
+            <string>com.blogspot.konishchevdmitry.pytee-dv</string>
+
+            <key>UTTypeReferenceURL</key>
+            <string>http://en.wikipedia.org/wiki/DV</string>
+
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>dv</string>
+                    <string>hdv</string>
+                </array>
+            </dict>
+        </dict>
+        <dict>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.movie</string>
+            </array>
+
+            <key>UTTypeDescription</key>
+            <string>Flash Video</string>
+
+            <key>UTTypeIconFile</key>
+            <string>pytee</string>
+
+            <key>UTTypeIdentifier</key>
+            <string>com.blogspot.konishchevdmitry.pytee-flash-video</string>
+
+            <key>UTTypeReferenceURL</key>
+            <string>http://en.wikipedia.org/wiki/Flash_Video</string>
+
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>flv</string>
+                    <string>f4v</string>
+                    <string>f4p</string>
+                    <string>swf</string>
+                </array>
+            </dict>
+        </dict>
+        <dict>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.movie</string>
+            </array>
+
+            <key>UTTypeDescription</key>
+            <string>MPEG-2 Transport Stream</string>
+
+            <key>UTTypeIconFile</key>
+            <string>pytee</string>
+
+            <key>UTTypeIdentifier</key>
+            <string>com.blogspot.konishchevdmitry.pytee-mts</string>
+
+            <key>UTTypeReferenceURL</key>
+            <string>http://en.wikipedia.org/wiki/.m2ts</string>
+
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>m2t</string>
+                    <string>m2ts</string>
+                    <string>mts</string>
+                    <string>mtv</string>
+                    <string>ts</string>
+                </array>
+            </dict>
+        </dict>
+        <dict>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.movie</string>
+            </array>
+
+            <key>UTTypeDescription</key>
+            <string>MPEG-4 Video</string>
+
+            <key>UTTypeIconFile</key>
+            <string>pytee</string>
+
+            <key>UTTypeIdentifier</key>
+            <string>com.blogspot.konishchevdmitry.pytee-m4v</string>
+
+            <key>UTTypeReferenceURL</key>
+            <string>http://en.wikipedia.org/wiki/M4V</string>
+
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>mp4</string>
+                    <string>m4v</string>
+                    <string>mpg4</string>
+                </array>
+            </dict>
+        </dict>
+        <dict>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.movie</string>
+            </array>
+
+            <key>UTTypeDescription</key>
+            <string>Matroska Video</string>
+
+            <key>UTTypeIconFile</key>
+            <string>pytee</string>
+
+            <key>UTTypeIdentifier</key>
+            <string>com.blogspot.konishchevdmitry.pytee-matroska-video</string>
+
+            <key>UTTypeReferenceURL</key>
+            <string>http://www.matroska.org</string>
+
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>mkv</string>
+                    <string>webm</string>
+                </array>
+            </dict>
+        </dict>
+        <dict>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.movie</string>
+            </array>
+
+            <key>UTTypeDescription</key>
+            <string>Material Exchange Format</string>
+
+            <key>UTTypeIconFile</key>
+            <string>pytee</string>
+
+            <key>UTTypeIdentifier</key>
+            <string>com.blogspot.konishchevdmitry.pytee-mxf</string>
+
+            <key>UTTypeReferenceURL</key>
+            <string>http://en.wikipedia.org/wiki/Material_Exchange_Format</string>
+
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>mxf</string>
+                </array>
+            </dict>
+        </dict>
+        <dict>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.movie</string>
+            </array>
+
+            <key>UTTypeDescription</key>
+            <string>Ogg Video</string>
+
+            <key>UTTypeIconFile</key>
+            <string>pytee</string>
+
+            <key>UTTypeIdentifier</key>
+            <string>com.blogspot.konishchevdmitry.pytee-ogg-video</string>
+
+            <key>UTTypeReferenceURL</key>
+            <string>http://xiph.org/ogg</string>
+
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>ogm</string>
+                    <string>ogv</string>
+                </array>
+            </dict>
+        </dict>
+        <dict>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.movie</string>
+            </array>
+
+            <key>UTTypeDescription</key>
+            <string>Real Media</string>
+
+            <key>UTTypeIconFile</key>
+            <string>pytee</string>
+
+            <key>UTTypeIdentifier</key>
+            <string>com.blogspot.konishchevdmitry.pytee-rmvb</string>
+
+            <key>UTTypeReferenceURL</key>
+            <string>http://www.real.com</string>
+
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>rmvb</string>
+                    <string>rm</string>
+                </array>
+            </dict>
+        </dict>
+        <dict>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.movie</string>
+            </array>
+
+            <key>UTTypeDescription</key>
+            <string>Video Object</string>
+
+            <key>UTTypeIconFile</key>
+            <string>pytee</string>
+
+            <key>UTTypeIdentifier</key>
+            <string>com.blogspot.konishchevdmitry.pytee-video-object</string>
+
+            <key>UTTypeReferenceURL</key>
+            <string>http://en.wikipedia.org/wiki/VOB</string>
+
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>vob</string>
+                </array>
+            </dict>
+        </dict>
+        <dict>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.movie</string>
+            </array>
+
+            <key>UTTypeDescription</key>
+            <string>XVID Video</string>
+
+            <key>UTTypeIconFile</key>
+            <string>pytee</string>
+
+            <key>UTTypeIdentifier</key>
+            <string>com.blogspot.konishchevdmitry.pytee-xvid</string>
+
+            <key>UTTypeReferenceURL</key>
+            <string>http://www.xvid.org</string>
+
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>xvid</string>
+                </array>
+            </dict>
+        </dict>
+    </array>
+</dict>
+</plist>
