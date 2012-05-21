@@ -79,7 +79,7 @@ class Config:
             try:
                 self.__db.close()
             except Exception as e:
-                LOG.error(Error("Unable to close the database:").append(e))
+                LOG.error(u"%s", Error("Unable to close the database:").append(e))
 
 
     def get_config_saving_interval(self):
@@ -124,7 +124,7 @@ class Config:
     def mark_movie_as_watched(self, movie_path):
         """Marks a movie as watched (forgets its last position)."""
 
-        LOG.debug("Marking movie '%s' as watched.", movie_path)
+        LOG.debug(u"Marking movie '%s' as watched.", movie_path)
 
         self.__db.execute("""
             DELETE FROM last_pos WHERE file_path = ?""", (movie_path,))
@@ -134,7 +134,7 @@ class Config:
     def save_movie_last_position(self, movie_path, position):
         """Saves last position for a movie."""
 
-        LOG.debug("Saving last position (%s) for movie '%s'.", position, movie_path)
+        LOG.debug(u"Saving last position (%s) for movie '%s'.", position, movie_path)
 
         self.__db.execute("""
             INSERT OR REPLACE INTO last_pos

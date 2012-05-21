@@ -150,7 +150,7 @@ class MPlayer(QtCore.QObject):
 
                     if fd < 0 and ctypes.get_errno() != errno.EINTR:
                         (LOG.debug if ctypes.get_errno() == errno.ENOENT else LOG.error)(
-                            "Unable to open the MPlayer's shared memory buffer: %s.", os.strerror(ctypes.get_errno()))
+                            u"Unable to open the MPlayer's shared memory buffer: %s.", os.strerror(ctypes.get_errno()))
                         return QtGui.QImage(width, height, QtGui.QImage.Format_RGB888)
 
                 try:
@@ -166,7 +166,7 @@ class MPlayer(QtCore.QObject):
                     try:
                         pycl.misc.syscall_wrapper(os.close, fd)
                     except Exception as e:
-                        LOG.error("Unable to close the MPlayer's shared memory object: %s.", EE(e))
+                        LOG.error(u"Unable to close the MPlayer's shared memory object: %s.", EE(e))
 
             return QtGui.QImage(self.__shm_memory, width, height, 3 * width, QtGui.QImage.Format_RGB888)
 
@@ -193,7 +193,7 @@ class MPlayer(QtCore.QObject):
             #return image
             # <--
         except Exception as e:
-            LOG.error("Failed to get the movie image: %s", e)
+            LOG.error(u"Failed to get the movie image: %s", e)
             return QtGui.QImage(width, height, QtGui.QImage.Format_RGB888)
 
 
@@ -272,7 +272,7 @@ class MPlayer(QtCore.QObject):
             try:
                 self.__shm_memory.close()
             except Exception as e:
-                LOG.error("Unable to unmap the MPlayer's shared memory: %s.", EE(e))
+                LOG.error(u"Unable to unmap the MPlayer's shared memory: %s.", EE(e))
             finally:
                 self.__shm_memory = None
 
@@ -293,7 +293,7 @@ class MPlayer(QtCore.QObject):
         """Called when MPlayer fails to start."""
 
         if self.__state != "staging":
-            LOG.debug("Ignoring 'failed' signal. We already have state %s.", self.__state)
+            LOG.debug(u"Ignoring 'failed' signal. We already have state %s.", self.__state)
             return
 
         self.terminate()
@@ -304,7 +304,7 @@ class MPlayer(QtCore.QObject):
         """Called on successful MPlayer start."""
 
         if self.__state != "staging":
-            LOG.debug("Ignoring 'started' signal. We already have state %s.", self.__state)
+            LOG.debug(u"Ignoring 'started' signal. We already have state %s.", self.__state)
             return
 
         try:
@@ -312,12 +312,12 @@ class MPlayer(QtCore.QObject):
             height = self.__get_property("height", int, force_pausing = True)
         except Exception as e:
             self.terminate()
-            LOG.error("%s", Error("MPlayer failed to open '{0}'.", movie_path).append(e))
+            LOG.error(u"%s", Error("MPlayer failed to open '{0}'.", movie_path).append(e))
             self.failed.emit(self.tr("MPlayer failed to open '{0}'.").format(movie_path))
         else:
             self.__movie = Movie(movie_path, width, height)
             self.__state = "running"
-            LOG.debug("We successfully started MPlayer for movie '%s'.", self.__movie)
+            LOG.debug(u"We successfully started MPlayer for movie '%s'.", self.__movie)
             self.started.emit()
 
 
@@ -329,19 +329,19 @@ class MPlayer(QtCore.QObject):
                 self.pos_changed.emit(self.cur_pos())
         except Exception as e:
             if self.running():
-                LOG.exception("MPlayer current status update failed. %s", e)
+                LOG.exception(u"MPlayer current status update failed. %s", e)
 
 
     def __command(self, command, suppress_debug = False):
         """Sends a command to the MPlayer."""
 
         if not suppress_debug:
-            LOG.debug("Sending '%s' command to the MPlayer...", command)
+            LOG.debug(u"Sending '%s' command to the MPlayer...", command)
 
         try:
             self.__process.stdin.write(command + "\n")
         except Exception as e:
-            LOG.debug("Error while sending a command to the MPlayer: %s.", EE(e))
+            LOG.debug(u"Error while sending a command to the MPlayer: %s.", EE(e))
             self.__connection_closed()
 
 
@@ -365,7 +365,7 @@ class MPlayer(QtCore.QObject):
                 if not line:
                     raise Error("unexpected end of file")
             except Exception as e:
-                LOG.debug("Error while reading a command response from the MPlayer: %s.", EE(e))
+                LOG.debug(u"Error while reading a command response from the MPlayer: %s.", EE(e))
                 self.__connection_closed()
 
             if line.startswith("ANS_"):
@@ -376,16 +376,16 @@ class MPlayer(QtCore.QObject):
                     try:
                         return result_type(value)
                     except ValueError:
-                        LOG.error("Property %s has an invalid value '%s'.", property_name, value)
+                        LOG.error(u"Property %s has an invalid value '%s'.", property_name, value)
                         raise Error(self.tr("Internal error."))
                 else:
-                    LOG.error("Invalid response for property %s received: %s.", property_name, line.rstrip())
+                    LOG.error(u"Invalid response for property %s received: %s.", property_name, line.rstrip())
                     raise Error(self.tr("Internal error."))
             else:
                 try:
                     sys.stdout.write(line)
                 except Exception as e:
-                    LOG.error("Unable to write MPlayer output to stdout: %s.", EE(e))
+                    LOG.error(u"Unable to write MPlayer output to stdout: %s.", EE(e))
 
 
     def __run(self, movie_path, video_output, start_from, paused):
@@ -419,7 +419,7 @@ class MPlayer(QtCore.QObject):
                 "-wid", video_output,
             ]
 
-        LOG.debug("Running MPlayer: %s", args)
+        LOG.debug(u"Running MPlayer: %s", args)
 
         process = None
         error = None
@@ -436,7 +436,7 @@ class MPlayer(QtCore.QObject):
                 except Exception as e:
                     raise Error(self.tr("MPlayer failed to open '{0}'."), movie_path)
         except Exception as e:
-            LOG.error("%s", EE(e))
+            LOG.error(u"%s", EE(e))
 
             if process is not None:
                self.__terminate(process)
@@ -456,17 +456,17 @@ class MPlayer(QtCore.QObject):
         """Terminates a MPlayer process."""
 
         pid = process.pid
-        LOG.debug("Killing the MPlayer process %s...", pid)
+        LOG.debug(u"Killing the MPlayer process %s...", pid)
 
         try:
             process.stdin.close()
         except Exception as e:
-            LOG.error("Unable to close the MPlayer process stdin: %s.", EE(e))
+            LOG.error(u"Unable to close the MPlayer process stdin: %s.", EE(e))
 
         try:
             process.stdout.close()
         except Exception as e:
-            LOG.error("Unable to close the MPlayer process stdin: %s.", EE(e))
+            LOG.error(u"Unable to close the MPlayer process stdin: %s.", EE(e))
 
         try:
             start_time = time.time()
@@ -482,7 +482,7 @@ class MPlayer(QtCore.QObject):
 
                 time.sleep(0.1)
             else:
-                LOG.debug("Killing the MPlayer process %s by SIGKILL...", pid)
+                LOG.debug(u"Killing the MPlayer process %s by SIGKILL...", pid)
 
                 try:
                     os.kill(pid, signal.SIGKILL)
@@ -490,7 +490,7 @@ class MPlayer(QtCore.QObject):
                     if e.errno != errno.ESRCH:
                         raise
         except Exception as e:
-            LOG.error("Unable to kill the MPlayer process %s: %s.", pid, EE(e))
+            LOG.error(u"Unable to kill the MPlayer process %s: %s.", pid, EE(e))
 
 
 

@@ -122,7 +122,7 @@ def main():
         pycl.gui.messages.error(None, app.tr("{0} crashed").format(constants.APP_NAME), e)
         sys.exit(1)
 
-    LOG.info("Exiting...")
+    LOG.info(u"Exiting...")
     sys.exit(0)
 
 

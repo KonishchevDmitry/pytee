@@ -34,8 +34,8 @@ def _movie_control(func):
     """Wraps methods that controls a movie playing."""
 
     def decorator(self, *args):
-        LOG.info("Player control: %s%s.", func.func_name,
-            "({0})".format(args[0]) if len(args) == 1 else args)
+        LOG.info(u"Player control: %s%s.", func.func_name,
+            u"({0})".format(args[0]) if len(args) == 1 else args)
 
         try:
             if self.opened():
@@ -43,7 +43,7 @@ def _movie_control(func):
             else:
                 raise Error(self.tr("No movie is opened."))
         except Exception as e:
-            LOG.warning("Player control request rejected. %s", EE(e))
+            LOG.warning(u"Player control request rejected. %s", EE(e))
 
     return decorator
 
@@ -146,7 +146,7 @@ class MPlayerWidget(QtGui.QWidget):
                         state["cur_pos"] = player.cur_pos()
                     except Exception as e:
                         if player.running():
-                            LOG.error("Unable to get current playing position for movie '%s': %s", state["movie_path"], e)
+                            LOG.error(u"Unable to get current playing position for movie '%s': %s", state["movie_path"], e)
 
                             # Not available yet
                             state["cur_pos"] = -1
@@ -457,14 +457,14 @@ class MPlayerWidget(QtGui.QWidget):
         if self.__cur_id == movie_id:
             return
 
-        LOG.debug("Switching to the movie %s from %s.", movie_id, self.__cur_id)
+        LOG.debug(u"Switching to the movie %s from %s.", movie_id, self.__cur_id)
 
         try:
             if self.__player().running():
                 if not self.__player().paused():
                     self.__player().pause()
         except Exception as e:
-            LOG.debug("Unable to pause current movie. %s", EE(e))
+            LOG.debug(u"Unable to pause current movie. %s", EE(e))
 
         if not pycl.main.is_osx():
             self.__display_widget().setVisible(False)
@@ -474,7 +474,7 @@ class MPlayerWidget(QtGui.QWidget):
             try:
                 seek_to = self.__player().cur_pos()
             except Exception as e:
-                LOG.debug("Unable to get movie's current position. %s", EE(e))
+                LOG.debug(u"Unable to get movie's current position. %s", EE(e))
 
         self.__cur_id = movie_id
         if self.__player().running():
@@ -484,7 +484,7 @@ class MPlayerWidget(QtGui.QWidget):
                 else:
                     self.__player().seek(float(seek_to) / 1000, True)
             except Exception as e:
-                LOG.debug("Unable to continue playing of the target movie. %s", EE(e))
+                LOG.debug(u"Unable to continue playing of the target movie. %s", EE(e))
 
         if not pycl.main.is_osx():
             self.__display_widget().setVisible(self.__player().running())

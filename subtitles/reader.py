@@ -34,7 +34,7 @@ class _SubtitleReader(QtCore.QObject):
         try:
             subtitles = []
 
-            LOG.debug("Reading subtitle file '%s' (%s):", path, language)
+            LOG.debug(u"Reading subtitle file '%s' (%s):", path, language)
 
             if os.path.getsize(path) >= MAX_FILE_SIZE:
                 raise Error(self.tr("Too big file size. May be it is not a subtitle file?"))
@@ -107,7 +107,7 @@ class _SubtitleReader(QtCore.QObject):
                             raise Error(self.tr("Invalid subtitle id '{0}' at line {1}."), line, line_num)
 
                         id = int(line)
-                        LOG.debug("Id: %s.", id)
+                        LOG.debug(u"Id: %s.", id)
 
                         state = "timings"
 
@@ -128,7 +128,7 @@ class _SubtitleReader(QtCore.QObject):
                                 int(match.group(7))
                             ) * 1000 + int(match.group(8))
 
-                            LOG.debug("Timings: %s - %s.", start_time, end_time)
+                            LOG.debug(u"Timings: %s - %s.", start_time, end_time)
 
                             state = "subtitle"
                             text = ""
@@ -161,7 +161,7 @@ class _SubtitleReader(QtCore.QObject):
                         state = "id"
                         repeat = True
                     else:
-                        LOG.debug("Text: %s", line)
+                        LOG.debug(u"Text: %s", line)
 
                         if text:
                             text += "\n"

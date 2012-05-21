@@ -166,15 +166,15 @@ class MainWindow(QtGui.QWidget):
         """Does all work that is needed to be done for opening a movie file."""
 
         movie_path = os.path.abspath(movie_path)
-        LOG.info("Opening '%s'...", movie_path)
+        LOG.info(u"Opening '%s'...", movie_path)
 
         try:
             last_pos = self.__config.get_movie_last_pos(movie_path)
         except Exception as e:
-            LOG.error(Error("Unable to get last watched position for {0}:", movie_path).append(e))
+            LOG.error(u"%s", Error("Unable to get last watched position for {0}:", movie_path).append(e))
             last_pos = 0
         finally:
-            LOG.debug("Last watched position for '%s': %s.", movie_path, last_pos)
+            LOG.debug(u"Last watched position for '%s': %s.", movie_path, last_pos)
 
         try:
             if not os.path.exists(movie_path):
@@ -189,7 +189,7 @@ class MainWindow(QtGui.QWidget):
             try:
                 alternatives, subtitles = self.__find_related_media_files(movie_path)
             except Exception as e:
-                LOG.error("%s", Error(self.tr("Unable to get the movie's info:")).append(e))
+                LOG.error(u"%s", Error(self.tr("Unable to get the movie's info:")).append(e))
 
                 try:
                     movie_dir = os.path.dirname(movie_path)
@@ -203,11 +203,11 @@ class MainWindow(QtGui.QWidget):
                         ):
                             subtitles.append(( os.path.join(movie_dir, file_name), "unknown" ))
                 except Exception as e:
-                    LOG.error("Unable to find the movie's subtitles. "
+                    LOG.error(u"Unable to find the movie's subtitles. "
                         "Error while reading the movie directory '%s': %s.", movie_dir, EE(e))
 
-            LOG.debug("Found alternative movies: %s.", alternatives)
-            LOG.debug("Found subtitles: %s.", subtitles)
+            LOG.debug(u"Found alternative movies: %s.", alternatives)
+            LOG.debug(u"Found subtitles: %s.", subtitles)
 
             self.__subtitles.open(subtitles)
             self.__player.open(self.__config.get_mplayer_path(),
@@ -228,7 +228,7 @@ class MainWindow(QtGui.QWidget):
     def _save_config(self):
         """Saves all configuration data."""
 
-        LOG.debug("Saving configuration data...")
+        LOG.debug(u"Saving configuration data...")
 
         try:
             player_state = self.__player.cur_state()
@@ -241,7 +241,7 @@ class MainWindow(QtGui.QWidget):
             elif player_state["state"] == mplayer.widget.PLAYER_STATE_OPENED and player_state["cur_pos"] > 0:
                 self.__config.save_movie_last_position(player_state["movie_path"], player_state["cur_pos"])
         except Exception as e:
-            LOG.error(Error("Unable to save configuration data:").append(e))
+            LOG.error(u"%s", Error("Unable to save configuration data:").append(e))
 
 
     def __close(self):
